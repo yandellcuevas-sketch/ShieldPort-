@@ -1,0 +1,14 @@
+{
+  "name": "shieldport-backend",
+  "version": "1.0.0",
+  "description": "Static server for ShieldPort web frontend",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "author": "ShieldPort",
+  "license": "ISC"
+}
