@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="ShieldPort — Plataforma profesional de seguridad USB y generación de QR premium con diseño cyber security futurista." />
+  <meta name="theme-color" content="#0a0b0f" />
+  <title>ShieldPort — Security Platform</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     PARTICLES BACKGROUND
+════════════════════════════════════════════════════ -->
+<div id="particles-bg" aria-hidden="true">
+  <canvas id="particles-canvas"></canvas>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     SIDEBAR NAV
+════════════════════════════════════════════════════ -->
+<nav id="sidebar" role="navigation" aria-label="Main navigation">
+  <div class="sidebar-header">
+    <div class="logo-container">
+      <div class="logo-icon" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24 4L6 12V24C6 33.9 14.1 43.2 24 46C33.9 43.2 42 33.9 42 24V12L24 4Z" stroke="url(#shield-grad)" stroke-width="2" fill="url(#shield-fill)"/>
+          <!-- Circuit lines -->
+          <line x1="16" y1="22" x2="32" y2="22" stroke="url(#circuit-grad)" stroke-width="1.5"/>
+          <line x1="24" y1="16" x2="24" y2="32" stroke="url(#circuit-grad)" stroke-width="1.5"/>
+          <circle cx="16" cy="22" r="2" fill="#2af0ff"/>
+          <circle cx="32" cy="22" r="2" fill="#0099ff"/>
+          <circle cx="24" cy="16" r="2" fill="#00ff9d"/>
+          <circle cx="24" cy="32" r="2" fill="#2af0ff"/>
+          <!-- USB symbol -->
+          <path d="M20 26 L20 30 L28 30 L28 26" stroke="#2af0ff" stroke-width="1.2" fill="none"/>
+          <defs>
+            <linearGradient id="shield-grad" x1="6" y1="4" x2="42" y2="46" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#2af0ff"/>
+              <stop offset="100%" stop-color="#0099ff"/>
+            </linearGradient>
+            <linearGradient id="shield-fill" x1="6" y1="4" x2="42" y2="46" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#2af0ff" stop-opacity="0.08"/>
+              <stop offset="100%" stop-color="#0099ff" stop-opacity="0.04"/>
+            </linearGradient>
+            <linearGradient id="circuit-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#2af0ff"/>
+              <stop offset="100%" stop-color="#00ff9d"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-name">Shield<span class="logo-accent">Port</span></span>
+        <span class="logo-version">v1.0 — Security Platform</span>
+      </div>
+    </div>
+    <!-- Mobile hamburger -->
+    <button id="mobile-menu-toggle" class="hamburger" aria-label="Toggle navigation" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+
+  <!-- Agent status indicator -->
+  <div id="agent-status-bar" class="agent-status" role="status" aria-live="polite">
+    <div class="agent-dot" id="agent-dot"></div>
+    <span id="agent-label">Detectando Desktop Agent...</span>
+  </div>
+
+  <ul class="nav-list" role="list">
+    <li>
+      <button class="nav-item active" id="nav-dashboard" data-section="dashboard" aria-current="page">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
+        </span>
+        <span class="nav-label">Dashboard</span>
+      </button>
+    </li>
+    <li>
+      <button class="nav-item" id="nav-usb" data-section="usb">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2v14m0-14l-3 3m3-3l3 3M6 16a3 3 0 006 0M18 16a3 3 0 01-6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="10" r="1.5" fill="currentColor"/><circle cx="15" cy="8" r="1.5" fill="currentColor"/></svg>
+        </span>
+        <span class="nav-label">USB Shield</span>
+        <span class="nav-badge" id="usb-count-badge" style="display:none;">0</span>
+      </button>
+    </li>
+
+    <li>
+      <button class="nav-item" id="nav-qr" data-section="qr">
+        <span class="nav-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="5" width="4" height="4" fill="currentColor" rx="0.5"/><rect x="13" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="15" y="5" width="4" height="4" fill="currentColor" rx="0.5"/><rect x="3" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="15" width="4" height="4" fill="currentColor" rx="0.5"/><rect x="13" y="13" width="4" height="4" rx="0.5" fill="currentColor"/><rect x="19" y="13" width="2" height="2" rx="0.5" fill="currentColor"/><rect x="19" y="17" width="2" height="4" rx="0.5" fill="currentColor"/><rect x="15" y="19" width="4" height="2" rx="0.5" fill="currentColor"/></svg>
+        </span>
+        <span class="nav-label">QR Forge</span>
+      </button>
+    </li>
+  </ul>
+
+  <div class="sidebar-footer">
+    <div class="system-info">
+      <div class="sys-row"><span>OS:</span><span id="sys-os">Detectando...</span></div>
+      <div class="sys-row"><span>WebUSB:</span><span id="sys-webusb">—</span></div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════════════ -->
+<main id="main-content" role="main">
+
+  <!-- ── TOAST NOTIFICATIONS ── -->
+  <div id="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
+  <!-- ══════════════════════════════════
+       SECTION: DASHBOARD
+  ══════════════════════════════════ -->
+  <section id="section-dashboard" class="section active" aria-label="Dashboard">
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">Security Dashboard</h1>
+        <p class="section-subtitle">Monitoreo en tiempo real de dispositivos y seguridad</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-ghost btn-sm" id="btn-refresh-dashboard" aria-label="Actualizar dashboard">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Actualizar
+        </button>
+      </div>
+    </div>
+
+    <!-- Status Grid -->
+    <div class="status-grid">
+      <div class="status-card" id="status-usb-card">
+        <div class="status-icon usb-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2v14m0-14l-3 3m3-3l3 3M6 16a3 3 0 006 0M18 16a3 3 0 01-6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="10" r="1.5" fill="currentColor"/><circle cx="15" cy="8" r="1.5" fill="currentColor"/></svg>
+        </div>
+        <div class="status-info">
+          <span class="status-label">USB Shield</span>
+          <span class="status-value" id="dash-usb-status">Sin agente</span>
+        </div>
+        <div class="status-indicator" id="dash-usb-indicator" data-state="offline"></div>
+      </div>
+
+
+      <div class="status-card" id="status-qr-card">
+        <div class="status-icon qr-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="5" width="4" height="4" fill="currentColor" rx="0.5"/><rect x="13" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="15" y="5" width="4" height="4" fill="currentColor" rx="0.5"/><rect x="3" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="15" width="4" height="4" fill="currentColor" rx="0.5"/></svg>
+        </div>
+        <div class="status-info">
+          <span class="status-label">QR Forge</span>
+          <span class="status-value" id="dash-qr-status">Listo</span>
+        </div>
+        <div class="status-indicator" id="dash-qr-indicator" data-state="online"></div>
+      </div>
+
+      <div class="status-card" id="status-agent-card">
+        <div class="status-icon agent-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+        <div class="status-info">
+          <span class="status-label">Desktop Agent</span>
+          <span class="status-value" id="dash-agent-status">Buscando...</span>
+        </div>
+        <div class="status-indicator" id="dash-agent-indicator" data-state="loading"></div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card mt-6">
+      <div class="card-header">
+        <h2 class="card-title">⚡ Accesos Rápidos</h2>
+      </div>
+      <div class="quick-actions-grid">
+        <button class="quick-action-btn" id="qa-scan-usb" onclick="ShieldPort.nav('usb'); ShieldPort.usb.scanUSB()">
+          <span class="qa-icon">🔍</span>
+          <span class="qa-label">Escanear USB</span>
+        </button>
+
+        <button class="quick-action-btn" id="qa-gen-qr" onclick="ShieldPort.nav('qr')">
+          <span class="qa-icon">🔷</span>
+          <span class="qa-label">Generar QR</span>
+        </button>
+        <button class="quick-action-btn" id="qa-protect-usb" onclick="ShieldPort.nav('usb')">
+          <span class="qa-icon">🔒</span>
+          <span class="qa-label">Proteger USB</span>
+        </button>
+        <button class="quick-action-btn" id="qa-unprotect-usb" onclick="ShieldPort.nav('usb')">
+          <span class="qa-icon">🔓</span>
+          <span class="qa-label">Desproteger USB</span>
+        </button>
+        <button class="quick-action-btn" id="qa-download-qr" onclick="ShieldPort.nav('qr')">
+          <span class="qa-icon">⬇️</span>
+          <span class="qa-label">Descargar QR</span>
+        </button>
+        <button class="quick-action-btn" id="qa-view-logs" onclick="ShieldPort.nav('usb'); ShieldPort.usb.openLogs()">
+          <span class="qa-icon">📋</span>
+          <span class="qa-label">Ver Logs</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Recent Activity + Alerts -->
+    <div class="grid-2-col mt-6">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🕐 Actividad Reciente</h2>
+        </div>
+        <div id="activity-list" class="activity-list">
+          <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <p>Sin actividad registrada</p>
+            <small>Las acciones aparecerán aquí</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">🛡️ Alertas de Seguridad</h2>
+        </div>
+        <div id="alerts-list" class="activity-list">
+          <div class="empty-state">
+            <div class="empty-icon" style="color: var(--green)">✅</div>
+            <p>Sin alertas activas</p>
+            <small>Sistema operando con normalidad</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Last USB -->
+    <div class="mt-6">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">💾 Último USB Detectado</h2>
+        </div>
+        <div id="last-usb-info">
+          <div class="empty-state">
+            <div class="empty-icon">🔌</div>
+            <p>Ningún USB detectado aún</p>
+            <small>Conecta un dispositivo y usa USB Shield</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       SECTION: USB SHIELD
+  ══════════════════════════════════ -->
+  <section id="section-usb" class="section" aria-label="USB Shield">
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">🔌 USB Shield</h1>
+        <p class="section-subtitle">Detección y protección de dispositivos USB</p>
+      </div>
+      <div class="header-actions">
+        <button class="btn btn-secondary btn-sm" id="btn-view-usb-logs">📋 Ver Logs</button>
+        <button class="btn btn-primary" id="btn-scan-usb">
+          <span class="btn-icon">🔍</span>
+          Escanear USB
+        </button>
+      </div>
+    </div>
+
+    <!-- Agent requirement notice -->
+    <div id="usb-agent-notice" class="notice notice-warning">
+      <div class="notice-icon">⚠️</div>
+      <div class="notice-body">
+        <strong>Desktop Agent requerido</strong>
+        <p>Las funciones USB completas (listar unidades, proteger, desproteger) requieren el <strong>ShieldPort Desktop Agent</strong> corriendo en tu PC.</p>
+        <p>El navegador (<strong>WebUSB</strong>) solo puede acceder a dispositivos USB de bajo nivel (HID, CDC) con VID/PID específico, pero <em>no</em> puede listar ni acceder a unidades de disco del sistema operativo.</p>
+        <div class="notice-actions">
+          <button class="btn btn-sm btn-primary" onclick="ShieldPort.agent.openSetupGuide()">📖 Ver instrucciones de instalación</button>
+          <button class="btn btn-sm btn-ghost" id="btn-retry-agent">🔄 Reintentar conexión</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WebUSB raw access (always available in Chrome) -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h2 class="card-title">🌐 Acceso WebUSB (Navegador)</h2>
+        <span class="badge badge-blue" id="webusb-browser-badge">Chrome/Edge</span>
+      </div>
+      <p class="card-desc">WebUSB permite acceso raw a dispositivos USB en Chrome/Edge. Funciona para dispositivos HID, CDC, custom class — NO para unidades de disco.</p>
+      <div class="webusb-actions">
+        <button class="btn btn-secondary" id="btn-webusb-request">
+          <span>🔌</span> Solicitar acceso WebUSB
+        </button>
+        <div id="webusb-device-info" class="device-info-box" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- USB Devices List (from Desktop Agent) -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h2 class="card-title">💾 Unidades USB del Sistema</h2>
+        <span class="badge badge-purple">Requiere Desktop Agent</span>
+      </div>
+      <div id="usb-devices-list">
+        <div class="empty-state">
+          <div class="empty-icon">🔌</div>
+          <p>Sin dispositivos detectados</p>
+          <small>Presiona "Escanear USB" para actualizar</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- USB Logs Panel -->
+    <div class="card mt-4" id="usb-logs-panel" style="display:none;">
+      <div class="card-header">
+        <h2 class="card-title">📋 Log de Actividad USB</h2>
+        <button class="btn btn-ghost btn-sm" id="btn-close-usb-logs">✕ Cerrar</button>
+      </div>
+      <div id="usb-log-entries" class="log-container"></div>
+    </div>
+
+    <!-- OS Requirements Info -->
+    <div class="card mt-4 info-card">
+      <div class="card-header">
+        <h2 class="card-title">ℹ️ Requisitos por Sistema Operativo</h2>
+      </div>
+      <div class="os-requirements">
+        <div class="os-block">
+          <div class="os-icon">🪟</div>
+          <div class="os-info">
+            <strong>Windows</strong>
+            <ul>
+              <li>Requiere Desktop Agent con <strong>privilegios de Administrador</strong></li>
+              <li>Protección vía <code>diskpart</code> (write protect bit en GPT/MBR)</li>
+              <li>O vía registro: <code>HKLM\SYSTEM\CurrentControlSet\Control\StorageDevicePolicies</code></li>
+              <li>Comando: <code>diskpart → select disk X → attributes disk set readonly</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="os-block">
+          <div class="os-icon">🐧</div>
+          <div class="os-info">
+            <strong>Linux</strong>
+            <ul>
+              <li>Requiere permisos <code>sudo</code> o grupo <code>disk</code></li>
+              <li>Comando: <code>sudo blockdev --setro /dev/sdX</code></li>
+              <li>Desproteger: <code>sudo blockdev --setrw /dev/sdX</code></li>
+            </ul>
+          </div>
+        </div>
+        <div class="os-block">
+          <div class="os-icon">🍎</div>
+          <div class="os-info">
+            <strong>macOS</strong>
+            <ul>
+              <li>Requiere permisos de <code>diskutil</code></li>
+              <li>Montaje solo lectura: <code>diskutil mount readOnly /dev/diskX</code></li>
+              <li>SIP (System Integrity Protection) puede bloquear ciertas operaciones</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NFC section removed -->
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">📡 NFC Studio</h1>
+        <p class="section-subtitle">Lectura y escritura de etiquetas NFC</p>
+      </div>
+      <div class="header-actions">
+        <span class="badge" id="nfc-compat-badge">Verificando...</span>
+      </div>
+    </div>
+
+    <!-- NFC compatibility notice -->
+    <div id="nfc-compat-notice" class="notice notice-info" style="display:none;">
+      <div class="notice-icon">ℹ️</div>
+      <div class="notice-body">
+        <strong>Compatibilidad Web NFC</strong>
+        <p>Web NFC está disponible principalmente en <strong>Android con Chrome 89+</strong>.</p>
+        <ul>
+          <li>✅ Android + Chrome: Lectura y escritura NFC completas</li>
+          <li>❌ iOS/Safari: No soportado (requiere app nativa Swift)</li>
+          <li>❌ Firefox/Edge: No implementado aún</li>
+          <li>❌ Desktop Chrome: Generalmente no disponible sin hardware NFC</li>
+        </ul>
+        <p>Si estás en un dispositivo no compatible, aún puedes usar el módulo QR para integración con NFC.</p>
+      </div>
+    </div>
+
+    <div class="grid-2-col mt-4">
+      <!-- READ NFC -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">📖 Leer Etiqueta NFC</h2>
+        </div>
+        <p class="card-desc">Acerca una etiqueta NFC al dispositivo para leer su contenido NDEF.</p>
+        <div class="nfc-scan-area" id="nfc-read-area">
+          <div class="nfc-wave-animation" id="nfc-wave" aria-hidden="true">
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="nfc-icon-center">📡</div>
+          </div>
+          <p id="nfc-read-status">Listo para leer</p>
+        </div>
+        <div class="card-actions">
+          <button class="btn btn-primary" id="btn-read-nfc">📡 Leer NFC</button>
+          <button class="btn btn-ghost btn-sm" id="btn-stop-read-nfc" style="display:none;">⛔ Detener</button>
+        </div>
+        <div id="nfc-read-result" class="nfc-result" style="display:none;"></div>
+      </div>
+
+      <!-- WRITE NFC -->
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">✍️ Escribir en Etiqueta NFC</h2>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="nfc-write-type">Tipo de contenido</label>
+          <select class="form-select" id="nfc-write-type">
+            <option value="url">🌐 URL / Enlace web</option>
+            <option value="text">📝 Texto libre</option>
+            <option value="phone">📞 Número de teléfono</option>
+            <option value="email">📧 Email</option>
+            <option value="contact">👤 Contacto (vCard)</option>
+            <option value="wifi">📶 Red WiFi</option>
+            <option value="location">📍 Ubicación GPS</option>
+            <option value="whatsapp">💬 WhatsApp</option>
+            <option value="custom">⚙️ Datos personalizados</option>
+          </select>
+        </div>
+
+        <!-- Dynamic form fields -->
+        <div id="nfc-write-fields" class="nfc-write-fields"></div>
+
+        <div class="card-actions">
+          <button class="btn btn-primary" id="btn-write-nfc">✍️ Escribir NFC</button>
+          <button class="btn btn-ghost btn-sm" id="btn-stop-write-nfc" style="display:none;">⛔ Detener</button>
+        </div>
+
+        <!-- NFC Lock (dangerous!) -->
+        <div class="danger-zone mt-4">
+          <h3 class="danger-title">⚠️ Zona de Bloqueo</h3>
+          <p class="danger-desc">Bloquear una etiqueta NFC puede ser <strong>IRREVERSIBLE</strong>. Solo algunos chips soportan bloqueo. Una vez bloqueada, no podrás escribir más datos.</p>
+          <button class="btn btn-danger btn-sm" id="btn-lock-nfc">🔒 Bloquear etiqueta NFC</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NFC ↔ QR Integration -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h2 class="card-title">🔄 Integración NFC ↔ QR</h2>
+      </div>
+      <div class="integration-grid">
+        <button class="integration-btn" id="btn-nfc-to-qr">
+          <span class="integration-icon">📡→🔷</span>
+          <span>NFC → QR</span>
+          <small>Convertir última lectura NFC en QR</small>
+        </button>
+        <button class="integration-btn" id="btn-qr-to-nfc">
+          <span class="integration-icon">🔷→📡</span>
+          <span>QR → NFC</span>
+          <small>Escribir contenido QR en etiqueta NFC</small>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════
+       SECTION: QR FORGE
+  ══════════════════════════════════ -->
+  <section id="section-qr" class="section" aria-label="QR Forge">
+    <div class="section-header">
+      <div>
+        <h1 class="section-title">🔷 QR Forge</h1>
+        <p class="section-subtitle">Generación de códigos QR premium con diseño futurista</p>
+      </div>
+    </div>
+
+    <div class="qr-forge-layout">
+      <!-- LEFT: Config Panel -->
+      <div class="qr-config-panel">
+        <!-- Content type -->
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title">📋 Tipo de Contenido</h2>
+          </div>
+          <div class="qr-type-grid" id="qr-type-grid">
+            <button class="qr-type-btn active" data-type="url" id="qrtype-url">🌐 URL</button>
+            <button class="qr-type-btn" data-type="text" id="qrtype-text">📝 Texto</button>
+            <button class="qr-type-btn" data-type="phone" id="qrtype-phone">📞 Teléfono</button>
+            <button class="qr-type-btn" data-type="email" id="qrtype-email">📧 Email</button>
+            <button class="qr-type-btn" data-type="contact" id="qrtype-contact">👤 Contacto</button>
+            <button class="qr-type-btn" data-type="wifi" id="qrtype-wifi">📶 WiFi</button>
+            <button class="qr-type-btn" data-type="location" id="qrtype-location">📍 Ubicación</button>
+            <button class="qr-type-btn" data-type="whatsapp" id="qrtype-whatsapp">💬 WhatsApp</button>
+            <button class="qr-type-btn" data-type="custom" id="qrtype-custom">⚙️ Custom</button>
+          </div>
+        </div>
+
+        <!-- Content form -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h2 class="card-title">✏️ Contenido</h2>
+          </div>
+          <div id="qr-content-form"></div>
+        </div>
+
+        <!-- Design customization -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h2 class="card-title">🎨 Diseño Premium</h2>
+          </div>
+          <div class="design-controls">
+            <div class="form-group">
+              <label class="form-label" for="qr-style-preset">Estilo predefinido</label>
+              <select class="form-select" id="qr-style-preset">
+                <option value="cyber">⚡ Cyber Neon</option>
+                <option value="ocean">🌊 Ocean Blue</option>
+                <option value="matrix">💚 Matrix Green</option>
+                <option value="fire">🔥 Fire Alert</option>
+                <option value="purple">💜 Violet Pulse</option>
+                <option value="custom">🎨 Personalizado</option>
+              </select>
+            </div>
+
+            <div id="custom-design-fields" style="display:none;">
+              <div class="color-row">
+                <div class="form-group">
+                  <label class="form-label" for="qr-color-dark">Color oscuro (módulos)</label>
+                  <input type="color" class="form-color" id="qr-color-dark" value="#2af0ff" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="qr-color-light">Color claro (fondo)</label>
+                  <input type="color" class="form-color" id="qr-color-light" value="#0a0b0f" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="qr-size">Tamaño (px)</label>
+              <div class="range-with-value">
+                <input type="range" class="form-range" id="qr-size" min="128" max="512" step="32" value="256" />
+                <span id="qr-size-val">256px</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="qr-margin">Margen</label>
+              <div class="range-with-value">
+                <input type="range" class="form-range" id="qr-margin" min="0" max="10" step="1" value="4" />
+                <span id="qr-margin-val">4</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="qr-ecl">Corrección de errores</label>
+              <select class="form-select" id="qr-ecl">
+                <option value="L">L — 7% (más pequeño)</option>
+                <option value="M" selected>M — 15% (recomendado)</option>
+                <option value="Q">Q — 25% (para logos)</option>
+                <option value="H">H — 30% (máxima)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label toggle-label" for="qr-glow-toggle">
+                <span>Efecto glow</span>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="qr-glow-toggle" checked />
+                  <span class="toggle-track"></span>
+                </label>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-actions mt-4">
+          <button class="btn btn-primary btn-lg" id="btn-generate-qr">
+            <span>⚡</span> Generar QR
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Preview + History -->
+      <div class="qr-preview-panel">
+        <!-- Preview -->
+        <div class="card qr-preview-card">
+          <div class="card-header">
+            <h2 class="card-title">👁️ Preview</h2>
+            <div id="qr-scannable-badge" class="badge badge-green" style="display:none;">✅ Escaneable</div>
+          </div>
+          <div class="qr-preview-area" id="qr-preview-area">
+            <div class="qr-placeholder">
+              <div class="qr-placeholder-icon">🔷</div>
+              <p>El QR aparecerá aquí</p>
+              <small>Configura el contenido y presiona Generar</small>
+            </div>
+          </div>
+          <div id="qr-export-actions" class="card-actions" style="display:none;">
+            <button class="btn btn-primary btn-sm" id="btn-download-png">⬇️ PNG</button>
+            <button class="btn btn-secondary btn-sm" id="btn-download-svg">⬇️ SVG</button>
+            <button class="btn btn-ghost btn-sm" id="btn-copy-qr">📋 Copiar</button>
+          </div>
+        </div>
+
+        <!-- QR History -->
+        <div class="card mt-4">
+          <div class="card-header">
+            <h2 class="card-title">🕐 Historial QR</h2>
+            <button class="btn btn-ghost btn-sm" id="btn-clear-qr-history">🗑️ Limpiar</button>
+          </div>
+          <div id="qr-history-list">
+            <div class="empty-state">
+              <div class="empty-icon">🔷</div>
+              <p>Sin QR generados aún</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══════════════════════════════════════════════════
+     MODAL: Confirmación crítica
+════════════════════════════════════════════════════ -->
+<div id="confirm-modal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+  <div class="modal-box">
+    <div class="modal-icon" id="confirm-icon">⚠️</div>
+    <h2 class="modal-title" id="confirm-title">Confirmar acción</h2>
+    <p class="modal-message" id="confirm-message"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="confirm-cancel">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-ok">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MODAL: Setup Guide
+════════════════════════════════════════════════════ -->
+<div id="setup-modal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="setup-title">
+  <div class="modal-box modal-lg">
+    <div class="modal-header">
+      <h2 class="modal-title" id="setup-title">📦 Instalación del Desktop Agent</h2>
+      <button class="btn btn-ghost btn-sm" id="setup-modal-close">✕</button>
+    </div>
+    <div class="modal-content" id="setup-modal-content"></div>
+  </div>
+</div>
+
+<!-- Scripts -->
+<script src="app.js"></script>
+<script src="usb-ui.js"></script>
+<script src="qr-service.js"></script>
+</body>
+</html>
