@@ -33,24 +33,13 @@ const ShieldPort = {
     const sections = ['dashboard', 'usb', 'qr'];
     if (!sections.includes(section)) return;
 
-    // Hide all sections
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.nav-item').forEach(n => {
-      n.classList.remove('active');
-      n.removeAttribute('aria-current');
-    });
-
-    // Activate target
+    // Scroll to target
     const targetSection = document.getElementById(`section-${section}`);
-    const targetNav = document.getElementById(`nav-${section}`);
-
-    if (targetSection) targetSection.classList.add('active');
-    if (targetNav) {
-      targetNav.classList.add('active');
-      targetNav.setAttribute('aria-current', 'page');
+    if (targetSection) {
+      // Small offset for smooth header/padding
+      const topPos = targetSection.getBoundingClientRect().top + window.pageYOffset - 20;
+      window.scrollTo({ top: topPos, behavior: 'smooth' });
     }
-
-    this.state.currentSection = section;
 
     // Close mobile menu
     this.closeMobileMenu();
@@ -64,6 +53,27 @@ const ShieldPort = {
     document.getElementById('btn-refresh-dashboard')?.addEventListener('click', () => {
       this.refreshDashboard();
     });
+
+    // Scroll spy
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const sectionId = entry.target.id.replace('section-', '');
+          document.querySelectorAll('.nav-item').forEach(n => {
+            n.classList.remove('active');
+            n.removeAttribute('aria-current');
+          });
+          const activeNav = document.getElementById(`nav-${sectionId}`);
+          if (activeNav) {
+            activeNav.classList.add('active');
+            activeNav.setAttribute('aria-current', 'page');
+          }
+          this.state.currentSection = sectionId;
+        }
+      });
+    }, { threshold: 0.3, rootMargin: "-10% 0px -60% 0px" });
+
+    document.querySelectorAll('.section').forEach(sec => observer.observe(sec));
   },
 
   // ── DETECT BROWSER CAPABILITIES ──────────────────────────

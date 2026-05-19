@@ -354,8 +354,16 @@ body {
 }
 
 /* ── SECTIONS ── */
-.section { display: none; animation: sectionFadeIn 0.4s ease; }
-.section.active { display: block; }
+.section { 
+  display: block; 
+  padding-top: 32px; 
+  margin-bottom: 80px; 
+  min-height: 80vh;
+  animation: sectionFadeIn 0.4s ease; 
+}
+.section:last-child {
+  margin-bottom: 0;
+}
 
 @keyframes sectionFadeIn {
   from { opacity: 0; transform: translateY(16px); }

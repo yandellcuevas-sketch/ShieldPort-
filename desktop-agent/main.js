@@ -54,3 +54,23 @@ wss.on('connection', (ws) => {
     }
   };
 });
+
+// Auto-detect USB changes every 3 seconds
+let lastDrivesStr = '';
+setInterval(async () => {
+  if (wss.clients.size > 0) {
+    try {
+      const drives = await usbService.getDrivesQuiet();
+      const currentStr = JSON.stringify(drives);
+      if (currentStr !== lastDrivesStr) {
+        lastDrivesStr = currentStr;
+        const msg = JSON.stringify({ type: 'DRIVES_LIST', drives });
+        wss.clients.forEach(c => {
+          if (c.readyState === 1) c.send(msg);
+        });
+      }
+    } catch (e) {
+      // ignore quiet errors
+    }
+  }
+}, 3000);

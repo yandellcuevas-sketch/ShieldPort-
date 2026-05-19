@@ -15,12 +15,19 @@ const usbService = {
 
   async getDrives() {
     this.onLog('info', 'Scanning system drives...');
+    return this._fetchDrives(true);
+  },
+
+  async getDrivesQuiet() {
+    return this._fetchDrives(false);
+  },
+
+  async _fetchDrives(verbose) {
     try {
       const drives = await drivelist.list();
       const usbDrives = drives
         .filter(d => d.isUSB || d.isRemovable)
         .map(d => {
-          // Determine mount point or fallback to device path
           const mount = d.mountpoints && d.mountpoints.length > 0 
             ? d.mountpoints[0].path 
             : d.device;
@@ -36,10 +43,10 @@ const usbService = {
           };
         });
       
-      this.onLog('success', `Found ${usbDrives.length} USB drive(s)`);
+      if (verbose) this.onLog('success', `Found ${usbDrives.length} USB drive(s)`);
       return usbDrives;
     } catch (e) {
-      this.onLog('error', 'Failed to scan drives: ' + e.message);
+      if (verbose) this.onLog('error', 'Failed to scan drives: ' + e.message);
       throw e;
     }
   },
