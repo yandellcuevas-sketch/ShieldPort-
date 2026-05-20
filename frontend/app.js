@@ -1,47 +1,68 @@
 /**
- * ShieldPort — app.js
- * Core application controller: routing, state, particles, agent detection
+ * ShieldPort v2.0 — app.js
+ * Core controller: navigation, state, particles, agent connection, toasts, modals
  */
 
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 // GLOBAL STATE
-// ════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 const ShieldPort = {
   state: {
     agentConnected: false,
-    agentWs: null,
-    agentUrl: 'ws://localhost:8765',
-    lastUsbDevice: null,
-    activityLog: [],
-    alerts: [],
-    usbDevices: [],
+    agentWs:        null,
+    agentUrl:       'ws://localhost:8765',
+    currentSection: 'dashboard',
+    lastUsbDevice:  null,
+    activityLog:    [],
+    alerts:         [],
+    usbDevices:     [],
+    webUsbSupported: false,
   },
 
-  // ── INIT ──────────────────────────────────────────────────
+  // ── INIT ─────────────────────────────────────────────────
   init() {
     this.initParticles();
     this.initNav();
-    this.detectCapabilities();
     this.initAgentConnection();
+    this.detectCapabilities();
     this.initMobileMenu();
     this.updateDashboardClock();
-    console.log('%cShieldPort initialized', 'color:#2af0ff;font-weight:bold;font-size:14px');
+    console.log('%cShieldPort v2.0 initialized', 'color:#2af0ff;font-weight:800;font-size:15px;');
   },
 
-  // ── NAVIGATION ────────────────────────────────────────────
+  // ── NAVIGATION ───────────────────────────────────────────
   nav(section) {
-    const sections = ['dashboard', 'usb', 'qr'];
-    if (!sections.includes(section)) return;
+    const validSections = ['dashboard', 'usb', 'qr'];
+    if (!validSections.includes(section)) return;
 
-    // Scroll to target
+    // Hide all sections
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+
+    // Show target
     const targetSection = document.getElementById(`section-${section}`);
     if (targetSection) {
-      // Small offset for smooth header/padding
-      const topPos = targetSection.getBoundingClientRect().top + window.pageYOffset - 20;
-      window.scrollTo({ top: topPos, behavior: 'smooth' });
+      targetSection.classList.add('active');
+      // Scroll to top smoothly
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    // Close mobile menu
+    // Update nav items
+    document.querySelectorAll('.nav-item[data-section]').forEach(n => {
+      n.classList.remove('active');
+      n.removeAttribute('aria-current');
+    });
+    const targetNav = document.getElementById(`nav-${section}`);
+    if (targetNav) {
+      targetNav.classList.add('active');
+      targetNav.setAttribute('aria-current', 'page');
+    }
+
+    // Update breadcrumb
+    const sectionNames = { dashboard: 'Dashboard', usb: 'USB Shield', qr: 'QR Forge' };
+    const breadcrumb = document.getElementById('topbar-section-name');
+    if (breadcrumb) breadcrumb.textContent = sectionNames[section] || section;
+
+    this.state.currentSection = section;
     this.closeMobileMenu();
   },
 
@@ -53,33 +74,10 @@ const ShieldPort = {
     document.getElementById('btn-refresh-dashboard')?.addEventListener('click', () => {
       this.refreshDashboard();
     });
-
-    // Scroll spy
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const sectionId = entry.target.id.replace('section-', '');
-          document.querySelectorAll('.nav-item').forEach(n => {
-            n.classList.remove('active');
-            n.removeAttribute('aria-current');
-          });
-          const activeNav = document.getElementById(`nav-${sectionId}`);
-          if (activeNav) {
-            activeNav.classList.add('active');
-            activeNav.setAttribute('aria-current', 'page');
-          }
-          this.state.currentSection = sectionId;
-        }
-      });
-    }, { threshold: 0.3, rootMargin: "-10% 0px -60% 0px" });
-
-    document.querySelectorAll('.section').forEach(sec => observer.observe(sec));
   },
 
-  // ── DETECT BROWSER CAPABILITIES ──────────────────────────
+  // ── DETECT CAPABILITIES ──────────────────────────────────
   detectCapabilities() {
-    // Detect OS
-    const platform = navigator.userAgentData?.platform || navigator.platform || 'Unknown';
     const ua = navigator.userAgent;
     let osName = 'Desconocido';
     if (/Windows/i.test(ua)) osName = 'Windows';
@@ -87,68 +85,61 @@ const ShieldPort = {
     else if (/Linux/i.test(ua)) osName = 'Linux';
     else if (/Android/i.test(ua)) osName = 'Android';
     else if (/iPhone|iPad/i.test(ua)) osName = 'iOS';
-    document.getElementById('sys-os').textContent = osName;
 
-    // Detect WebUSB
-    const webUsbAvailable = 'usb' in navigator;
-    this.state.webUsbSupported = webUsbAvailable;
-    const webUsbEl = document.getElementById('sys-webusb');
-    if (webUsbEl) webUsbEl.textContent = webUsbAvailable ? 'Sí' : 'No';
+    const osEl = document.getElementById('sys-os');
+    if (osEl) osEl.textContent = osName;
+
+    this.state.webUsbSupported = 'usb' in navigator;
   },
 
-  // ── DESKTOP AGENT CONNECTION ──────────────────────────────
+  // ── DESKTOP AGENT CONNECTION ─────────────────────────────
   initAgentConnection() {
-    this.updateAgentStatus('loading', 'Buscando Desktop Agent...');
+    this.updateAgentStatus('loading', 'Conectando...');
     this._connectAgent();
   },
 
   _connectAgent() {
     try {
       const ws = new WebSocket(this.state.agentUrl);
-      let opened = false;
 
       ws.addEventListener('open', () => {
-        opened = true;
         this.state.agentConnected = true;
         this.state.agentWs = ws;
-        this.updateAgentStatus('online', 'Desktop Agent conectado');
-        this.addActivity('🖥️', 'Desktop Agent conectado');
-        this.updateDashboardAgentState(true);
-        // Request initial USB scan
+        this.updateAgentStatus('online', 'Agente Activo');
+        // Hide USB notice
+        const notice = document.getElementById('usb-agent-notice');
+        if (notice) notice.style.display = 'none';
+        // Auto-scan
         this.sendToAgent({ type: 'GET_DRIVES' });
       });
 
-      ws.addEventListener('message', (evt) => {
+      ws.addEventListener('message', (e) => {
         try {
-          const msg = JSON.parse(evt.data);
+          const msg = JSON.parse(e.data);
           this._handleAgentMessage(msg);
-        } catch (e) {
-          console.error('ShieldPort: bad agent message', e);
+        } catch (err) {
+          console.warn('ShieldPort: Invalid WS message', err);
         }
       });
 
       ws.addEventListener('close', () => {
         this.state.agentConnected = false;
         this.state.agentWs = null;
-        if (opened) {
-          this.updateAgentStatus('offline', 'Desktop Agent desconectado');
-          this.addAlert('🔴', 'Desktop Agent desconectado. Funciones USB limitadas.');
-        } else {
-          this.updateAgentStatus('offline', 'Sin Desktop Agent');
-        }
-        this.updateDashboardAgentState(false);
-        // Retry every 8s
-        setTimeout(() => this._connectAgent(), 8000);
+        this.updateAgentStatus('offline', 'Sin Agente');
+        // Show USB notice again
+        const notice = document.getElementById('usb-agent-notice');
+        if (notice) notice.style.display = 'flex';
+        // Retry after 5 seconds
+        setTimeout(() => this._connectAgent(), 5000);
       });
 
       ws.addEventListener('error', () => {
-        // Silently retry — no error shown to user
+        this.updateAgentStatus('offline', 'Sin Agente');
       });
 
     } catch (e) {
-      this.updateAgentStatus('offline', 'Sin Desktop Agent');
-      this.updateDashboardAgentState(false);
-      setTimeout(() => this._connectAgent(), 8000);
+      this.updateAgentStatus('offline', 'Sin Agente');
+      setTimeout(() => this._connectAgent(), 5000);
     }
   },
 
@@ -156,272 +147,265 @@ const ShieldPort = {
     switch (msg.type) {
       case 'DRIVES_LIST':
         this.state.usbDevices = msg.drives || [];
-        ShieldPort.usb.renderDevices(msg.drives || []);
-        this.updateUsbDashboard(msg.drives || []);
+        if (this.usb) this.usb.renderDevices(msg.drives || []);
+        this._updateDashboardUSBStatus(msg.drives || []);
         break;
+
       case 'DRIVE_PROTECTED':
-        ShieldPort.usb.onProtectResult(msg);
+        if (this.usb) this.usb.onProtectResult(msg);
         break;
+
       case 'DRIVE_UNPROTECTED':
-        ShieldPort.usb.onUnprotectResult(msg);
+        if (this.usb) this.usb.onUnprotectResult(msg);
         break;
+
       case 'LOG':
-        ShieldPort.usb.appendLog(msg.level, msg.message);
+        if (this.usb) this.usb.appendLog(msg.level, msg.message);
         break;
-      case 'ERROR':
-        this.showToast('error', 'Error del sistema', msg.message);
+
+      default:
         break;
     }
   },
 
-  sendToAgent(payload) {
-    if (this.state.agentConnected && this.state.agentWs) {
-      this.state.agentWs.send(JSON.stringify(payload));
+  sendToAgent(msg) {
+    if (this.state.agentWs?.readyState === WebSocket.OPEN) {
+      this.state.agentWs.send(JSON.stringify(msg));
       return true;
     }
     return false;
   },
 
   updateAgentStatus(state, label) {
-    const dot = document.getElementById('agent-dot');
-    const labelEl = document.getElementById('agent-label');
-    if (dot) { dot.className = 'agent-dot ' + state; }
-    if (labelEl) labelEl.textContent = label;
-  },
-
-  updateDashboardAgentState(online) {
-    const el = document.getElementById('dash-agent-status');
-    const ind = document.getElementById('dash-agent-indicator');
-    if (el) el.textContent = online ? 'Activo' : 'Sin conexión';
-    if (ind) ind.dataset.state = online ? 'online' : 'offline';
-
-    const usbEl = document.getElementById('dash-usb-status');
-    const usbInd = document.getElementById('dash-usb-indicator');
-    if (!online) {
-      if (usbEl) usbEl.textContent = 'Solo Web';
-      if (usbInd) usbInd.dataset.state = 'warning';
+    // Sidebar strip
+    const strip = document.getElementById('agent-status-bar');
+    if (strip) {
+      strip.className = `sidebar-agent-strip ${state === 'online' ? 'online' : state === 'loading' ? 'loading' : 'offline'}`;
+      const labelEl = document.getElementById('agent-label');
+      if (labelEl) labelEl.textContent = label;
     }
 
-    // Hide/show USB agent notice based on connection
-    const notice = document.getElementById('usb-agent-notice');
-    if (notice) notice.style.display = online ? 'none' : 'flex';
-  },
-
-  updateUsbDashboard(drives) {
-    const usbEl = document.getElementById('dash-usb-status');
-    const usbInd = document.getElementById('dash-usb-indicator');
-    const badge = document.getElementById('usb-count-badge');
-
-    const usbDrives = drives.filter(d => d.isUsb);
-    if (usbEl) usbEl.textContent = usbDrives.length > 0
-      ? `${usbDrives.length} USB detectado${usbDrives.length > 1 ? 's' : ''}`
-      : 'Sin USB';
-    if (usbInd) usbInd.dataset.state = usbDrives.length > 0 ? 'online' : 'offline';
-    if (badge) {
-      badge.textContent = usbDrives.length;
-      badge.style.display = usbDrives.length > 0 ? 'inline-flex' : 'none';
+    // Topbar pill
+    const pill = document.getElementById('topbar-agent-pill');
+    if (pill) {
+      pill.className = `topbar-agent-pill ${state === 'online' ? 'connected' : 'disconnected'}`;
+      const pillLabel = document.getElementById('topbar-agent-label');
+      if (pillLabel) pillLabel.textContent = label;
     }
 
-    // Last USB on dashboard
-    if (usbDrives.length > 0) {
-      this.state.lastUsbDevice = usbDrives[0];
-      this.renderLastUsb(usbDrives[0]);
+    // Dashboard card
+    const agentIndicator = document.getElementById('dash-agent-indicator');
+    const agentStatus    = document.getElementById('dash-agent-status');
+    if (agentIndicator) agentIndicator.setAttribute('data-state', state === 'online' ? 'online' : state === 'loading' ? 'loading' : 'offline');
+    if (agentStatus) agentStatus.textContent = label;
+  },
+
+  _updateDashboardUSBStatus(drives) {
+    const count = drives.length;
+    const statusEl    = document.getElementById('dash-usb-status');
+    const indicatorEl = document.getElementById('dash-usb-indicator');
+    const badgeEl     = document.getElementById('usb-count-badge');
+
+    if (statusEl) statusEl.textContent = count > 0 ? `${count} dispositivo${count !== 1 ? 's' : ''} detectado${count !== 1 ? 's' : ''}` : 'Sin dispositivos';
+    if (indicatorEl) indicatorEl.setAttribute('data-state', count > 0 ? 'online' : 'warning');
+
+    if (badgeEl) {
+      if (count > 0) {
+        badgeEl.textContent = count;
+        badgeEl.style.display = 'inline-flex';
+      } else {
+        badgeEl.style.display = 'none';
+      }
+    }
+
+    if (drives.length > 0) {
+      const last = drives[0];
+      this.state.lastUsbDevice = last;
+      const lastEl = document.getElementById('last-usb-info');
+      if (lastEl) {
+        lastEl.innerHTML = `
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 0;">
+            <div style="width:40px;height:40px;border-radius:10px;background:rgba(42,240,255,0.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2af0ff" stroke-width="1.7" stroke-linecap="round">
+                <path d="M12 2v12M9 6l3-4 3 4"/>
+                <path d="M7 14a5 5 0 0010 0"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-weight:700;color:var(--text-primary);font-size:14px;">${this._esc(last.name || last.device || 'USB Drive')}</div>
+              <div style="font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;">${this._esc(last.mount || last.device || '—')} · ${this._formatBytes(last.size)}</div>
+            </div>
+          </div>`;
+      }
     }
   },
 
-  renderLastUsb(drive) {
-    const el = document.getElementById('last-usb-info');
-    if (!el) return;
-    el.innerHTML = `
-      <div class="usb-device-grid" style="margin:0;">
-        <div class="usb-info-item">
-          <span class="usb-info-label">Nombre</span>
-          <span class="usb-info-value">${this._esc(drive.name || 'USB Drive')}</span>
-        </div>
-        <div class="usb-info-item">
-          <span class="usb-info-label">Unidad</span>
-          <span class="usb-info-value">${this._esc(drive.mount || drive.device || '—')}</span>
-        </div>
-        <div class="usb-info-item">
-          <span class="usb-info-label">Tamaño</span>
-          <span class="usb-info-value">${this._formatBytes(drive.size)}</span>
-        </div>
-        <div class="usb-info-item">
-          <span class="usb-info-label">Estado</span>
-          <span class="usb-info-value">
-            <span class="lock-anim ${drive.readOnly ? 'locked' : 'unlocked'}">
-              ${drive.readOnly ? '🔒 Protegido' : '🔓 Desprotegido'}
-            </span>
-          </span>
-        </div>
-      </div>
-    `;
-  },
-
-  // ── MOBILE MENU ───────────────────────────────────────────
+  // ── MOBILE MENU ──────────────────────────────────────────
   initMobileMenu() {
-    // Inject overlay if not exists
-    if (!document.getElementById('sidebar-overlay')) {
-      const overlay = document.createElement('div');
-      overlay.id = 'sidebar-overlay';
-      document.body.appendChild(overlay);
-      overlay.addEventListener('click', () => this.closeMobileMenu());
-    }
-
-    const toggle = document.getElementById('mobile-menu-toggle');
-    if (toggle) {
-      toggle.addEventListener('click', () => {
-        const sidebar = document.getElementById('sidebar');
-        const overlay = document.getElementById('sidebar-overlay');
-        const isOpen = sidebar.classList.contains('mobile-open');
-        if (isOpen) {
-          this.closeMobileMenu();
-        } else {
-          sidebar.classList.add('mobile-open');
-          overlay.classList.add('active');
-          toggle.setAttribute('aria-expanded', 'true');
-        }
-      });
-    }
+    const hamburger = document.getElementById('mobile-menu-toggle');
+    if (!hamburger) return;
+    hamburger.addEventListener('click', () => {
+      const sidebar = document.getElementById('sidebar');
+      const open = sidebar.classList.toggle('open');
+      hamburger.setAttribute('aria-expanded', open);
+    });
   },
 
   closeMobileMenu() {
-    document.getElementById('sidebar')?.classList.remove('mobile-open');
-    document.getElementById('sidebar-overlay')?.classList.remove('active');
-    document.getElementById('mobile-menu-toggle')?.setAttribute('aria-expanded', 'false');
-  },
-
-  // ── ACTIVITY LOG ──────────────────────────────────────────
-  addActivity(icon, text) {
-    const now = new Date();
-    const time = now.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
-    this.state.activityLog.unshift({ icon, text, time });
-    if (this.state.activityLog.length > 50) this.state.activityLog.pop();
-    this._renderActivity();
-  },
-
-  _renderActivity() {
-    const list = document.getElementById('activity-list');
-    if (!list) return;
-    const items = this.state.activityLog.slice(0, 10);
-    if (items.length === 0) return;
-    list.innerHTML = items.map(a => `
-      <div class="activity-item">
-        <span class="activity-type">${a.icon}</span>
-        <span class="activity-text">${this._esc(a.text)}</span>
-        <span class="activity-time">${a.time}</span>
-      </div>
-    `).join('');
-  },
-
-  // ── ALERTS ───────────────────────────────────────────────
-  addAlert(icon, text, level = 'warning') {
-    const now = new Date();
-    const time = now.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
-    this.state.alerts.unshift({ icon, text, time, level });
-    if (this.state.alerts.length > 20) this.state.alerts.pop();
-    this._renderAlerts();
-  },
-
-  _renderAlerts() {
-    const list = document.getElementById('alerts-list');
-    if (!list) return;
-    const items = this.state.alerts.slice(0, 8);
-    if (items.length === 0) return;
-    list.innerHTML = items.map(a => `
-      <div class="activity-item">
-        <span class="activity-type">${a.icon}</span>
-        <span class="activity-text" style="color: var(--${a.level === 'error' ? 'red' : a.level === 'success' ? 'green' : 'yellow'})">${this._esc(a.text)}</span>
-        <span class="activity-time">${a.time}</span>
-      </div>
-    `).join('');
-  },
-
-  // ── TOAST NOTIFICATIONS ───────────────────────────────────
-  showToast(type, title, message, duration = 4000) {
-    const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
-    const container = document.getElementById('toast-container');
-    if (!container) return;
-
-    const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
-    toast.innerHTML = `
-      <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
-      <div class="toast-body">
-        <div class="toast-title">${this._esc(title)}</div>
-        ${message ? `<div class="toast-msg">${this._esc(message)}</div>` : ''}
-      </div>
-    `;
-
-    toast.addEventListener('click', () => this._dismissToast(toast));
-    container.appendChild(toast);
-
-    // Auto-dismiss
-    setTimeout(() => this._dismissToast(toast), duration);
-  },
-
-  _dismissToast(toast) {
-    toast.style.animation = 'toastOut 0.3s ease forwards';
-    setTimeout(() => toast.remove(), 300);
-  },
-
-  // ── CONFIRM MODAL ─────────────────────────────────────────
-  confirm(icon, title, message, okLabel, dangerLevel = 'danger') {
-    return new Promise((resolve) => {
-      const modal = document.getElementById('confirm-modal');
-      document.getElementById('confirm-icon').textContent = icon;
-      document.getElementById('confirm-title').textContent = title;
-      document.getElementById('confirm-message').textContent = message;
-
-      const okBtn = document.getElementById('confirm-ok');
-      okBtn.textContent = okLabel;
-      okBtn.className = `btn btn-${dangerLevel}`;
-
-      modal.style.display = 'flex';
-
-      const onOk = () => {
-        modal.style.display = 'none';
-        cleanup();
-        resolve(true);
-      };
-      const onCancel = () => {
-        modal.style.display = 'none';
-        cleanup();
-        resolve(false);
-      };
-
-      const cleanup = () => {
-        okBtn.removeEventListener('click', onOk);
-        document.getElementById('confirm-cancel').removeEventListener('click', onCancel);
-        modal.removeEventListener('click', onOverlayClick);
-      };
-
-      const onOverlayClick = (e) => { if (e.target === modal) onCancel(); };
-
-      okBtn.addEventListener('click', onOk);
-      document.getElementById('confirm-cancel').addEventListener('click', onCancel);
-      modal.addEventListener('click', onOverlayClick);
-    });
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.remove('open');
+    const hamburger = document.getElementById('mobile-menu-toggle');
+    if (hamburger) hamburger.setAttribute('aria-expanded', 'false');
   },
 
   // ── DASHBOARD ────────────────────────────────────────────
   refreshDashboard() {
+    this.addActivity('refresh', 'Dashboard actualizado');
     if (this.state.agentConnected) {
       this.sendToAgent({ type: 'GET_DRIVES' });
     }
-    this.showToast('info', 'Actualizando', 'Refrescando estado del dashboard...');
-    this.addActivity('🔄', 'Dashboard actualizado');
+    this.showToast('info', 'Actualizado', 'Dashboard refrescado');
   },
 
   updateDashboardClock() {
-    // QR dashboard always online
-    const qrStatus = document.getElementById('dash-qr-status');
-    const qrInd = document.getElementById('dash-qr-indicator');
-    if (qrStatus) qrStatus.textContent = 'Listo';
-    if (qrInd) qrInd.dataset.state = 'online';
+    // No clock displayed; placeholder for any periodic update
   },
 
-  // ── AGENT SETUP GUIDE ────────────────────────────────────
+  // ── ACTIVITY LOG ─────────────────────────────────────────
+  addActivity(iconKey, text) {
+    const list = document.getElementById('activity-list');
+    if (!list) return;
+
+    // Remove empty state
+    const emptyState = list.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
+
+    const time = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const item = document.createElement('div');
+    item.className = 'activity-item';
+
+    const iconSvgs = {
+      usb:     '<path d="M12 2v12M9 6l3-4 3 4"/><path d="M7 14a5 5 0 0010 0"/>',
+      lock:    '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>',
+      unlock:  '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>',
+      qr:      '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
+      refresh: '<path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+      check:   '<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/>',
+    };
+    const svgKey = typeof iconKey === 'string' ? iconKey : 'check';
+    const svgPath = iconSvgs[svgKey] || iconSvgs.check;
+
+    item.innerHTML = `
+      <div class="act-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svgPath}</svg>
+      </div>
+      <span class="act-text">${this._esc(text)}</span>
+      <span class="act-time">${time}</span>`;
+
+    list.insertBefore(item, list.firstChild);
+
+    // Cap at 20 items
+    while (list.children.length > 20) list.removeChild(list.lastChild);
+
+    this.state.activityLog.unshift({ iconKey, text, time });
+    if (this.state.activityLog.length > 50) this.state.activityLog.pop();
+  },
+
+  addAlert(iconKey, text, variant = 'info') {
+    const list = document.getElementById('alerts-list');
+    if (!list) return;
+
+    const emptyState = list.querySelector('.empty-state');
+    if (emptyState) emptyState.remove();
+
+    const time = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+    const item = document.createElement('div');
+    item.className = 'activity-item';
+    item.innerHTML = `
+      <div class="act-icon"><svg viewBox="0 0 24 24" fill="none" stroke="${variant === 'success' ? 'var(--green)' : variant === 'danger' ? 'var(--red)' : 'var(--cyan)'}" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <span class="act-text">${this._esc(text)}</span>
+      <span class="act-time">${time}</span>`;
+    list.insertBefore(item, list.firstChild);
+    while (list.children.length > 10) list.removeChild(list.lastChild);
+  },
+
+  // ── TOAST SYSTEM ─────────────────────────────────────────
+  showToast(type, title, message = '', duration = 4500) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const icons = {
+      success: '<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/>',
+      error:   '<circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>',
+      warning: '<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+      info:    '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+    };
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+      <div class="toast-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${icons[type] || icons.info}</svg>
+      </div>
+      <div class="toast-body">
+        <div class="toast-title">${this._esc(title)}</div>
+        ${message ? `<div class="toast-msg">${this._esc(message)}</div>` : ''}
+      </div>
+      <button class="toast-close" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>`;
+
+    const close = () => {
+      toast.classList.add('leaving');
+      setTimeout(() => toast.remove(), 280);
+    };
+
+    toast.querySelector('.toast-close').addEventListener('click', close);
+    container.appendChild(toast);
+
+    if (duration > 0) setTimeout(close, duration);
+    return toast;
+  },
+
+  // ── CONFIRM MODAL ────────────────────────────────────────
+  confirm(title, body, confirmLabel = 'Confirmar', variant = 'primary') {
+    return new Promise((resolve) => {
+      const modal  = document.getElementById('confirm-modal');
+      const titleEl = document.getElementById('confirm-title');
+      const bodyEl  = document.getElementById('confirm-body');
+      const okBtn   = document.getElementById('confirm-ok');
+      const cancelX = document.getElementById('confirm-cancel-x');
+      const cancelBtn = document.getElementById('confirm-cancel');
+
+      if (!modal) { resolve(false); return; }
+
+      titleEl.textContent = title;
+      bodyEl.textContent  = body;
+      okBtn.textContent   = confirmLabel;
+      okBtn.className     = `btn btn-${variant}`;
+
+      modal.style.display = 'flex';
+
+      const done = (result) => {
+        modal.style.display = 'none';
+        resolve(result);
+      };
+
+      // Remove old listeners
+      const newOk = okBtn.cloneNode(true);
+      okBtn.parentNode.replaceChild(newOk, okBtn);
+      newOk.textContent = confirmLabel;
+      newOk.className   = `btn btn-${variant}`;
+      newOk.addEventListener('click', () => done(true));
+
+      cancelX.onclick = () => done(false);
+      cancelBtn.onclick = () => done(false);
+    });
+  },
+
+  // ── SETUP GUIDE ──────────────────────────────────────────
   agent: {
     openSetupGuide() {
       const modal = document.getElementById('setup-modal');
@@ -429,52 +413,37 @@ const ShieldPort = {
       if (!modal || !content) return;
 
       content.innerHTML = `
-        <h3>🪟 Windows</h3>
-        <p>1. Descarga el Desktop Agent desde el repositorio del proyecto.</p>
-        <p>2. Ejecuta como <strong>Administrador</strong>:</p>
-        <pre>cd desktop-agent
-npm install
-node main.js</pre>
-        <p>3. El agente arrancará en el puerto <code>8765</code>. Recarga esta página.</p>
-
-        <h3>🐧 Linux</h3>
-        <pre>cd desktop-agent
-npm install
-sudo node main.js</pre>
-
-        <h3>🍎 macOS</h3>
-        <pre>cd desktop-agent
-npm install
-sudo node main.js</pre>
-
-        <p style="margin-top:14px; color: var(--text-muted); font-size:12px;">
-          Una vez activo, el ícono en la barra lateral se volverá verde automáticamente.
-        </p>
-      `;
+        <div style="display:flex;flex-direction:column;gap:20px;padding-top:8px;">
+          <div style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;">
+            <div style="font-weight:700;font-size:14px;color:var(--text-primary);margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+              Requisitos
+            </div>
+            <ul style="list-style:disc;padding-left:18px;display:flex;flex-direction:column;gap:6px;">
+              <li style="font-size:13px;color:var(--text-secondary);">Node.js v18 o superior instalado</li>
+              <li style="font-size:13px;color:var(--text-secondary);">PowerShell disponible (solo Windows)</li>
+              <li style="font-size:13px;color:var(--text-secondary);">Ejecutar como <strong style="color:var(--text-primary);">Administrador</strong> para proteger USBs</li>
+            </ul>
+          </div>
+          <div style="background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;">
+            <div style="font-weight:700;font-size:14px;color:var(--text-primary);margin-bottom:12px;">Pasos de instalación</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              ${['cd desktop-agent', 'npm install', 'node main.js'].map((cmd, i) => `
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:22px;height:22px;border-radius:50%;background:rgba(42,240,255,0.12);border:1px solid rgba(42,240,255,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--cyan);flex-shrink:0;">${i + 1}</div>
+                  <code style="font-family:'JetBrains Mono',monospace;font-size:13px;background:rgba(255,255,255,0.05);padding:6px 12px;border-radius:6px;color:var(--cyan);flex:1;">${cmd}</code>
+                </div>`).join('')}
+            </div>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);text-align:center;">El agente iniciará en <code style="color:var(--cyan);font-family:'JetBrains Mono',monospace;">ws://localhost:8765</code> y conectará automáticamente.</p>
+        </div>`;
 
       modal.style.display = 'flex';
-      document.getElementById('setup-modal-close')?.addEventListener('click', () => {
+
+      document.getElementById('setup-modal-close').onclick = () => {
         modal.style.display = 'none';
-      }, { once: true });
-
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) modal.style.display = 'none';
-      }, { once: true });
+      };
     }
-  },
-
-  // ── UTILITIES ────────────────────────────────────────────
-  _formatBytes(bytes) {
-    if (!bytes || bytes === 0) return '—';
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
-  },
-
-  _esc(str) {
-    const d = document.createElement('div');
-    d.textContent = String(str || '');
-    return d.innerHTML;
   },
 
   // ── PARTICLES ────────────────────────────────────────────
@@ -483,86 +452,75 @@ sudo node main.js</pre>
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-    resize();
-    window.addEventListener('resize', resize);
+    let W = canvas.width  = window.innerWidth;
+    let H = canvas.height = window.innerHeight;
 
-    const PARTICLE_COUNT = 60;
-    const particles = [];
+    const COLORS = ['rgba(42,240,255,', 'rgba(16,242,139,', 'rgba(59,130,246,'];
 
-    class Particle {
-      constructor() { this.reset(); }
-      reset() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = Math.random() * 1.5 + 0.3;
-        this.speedX = (Math.random() - 0.5) * 0.3;
-        this.speedY = (Math.random() - 0.5) * 0.3;
-        this.opacity = Math.random() * 0.4 + 0.1;
-        this.color = Math.random() > 0.6 ? '#2af0ff' : Math.random() > 0.5 ? '#0099ff' : '#00ff9d';
-        this.pulseSpeed = Math.random() * 0.02 + 0.005;
-        this.pulsePhase = Math.random() * Math.PI * 2;
-      }
-      update(t) {
-        this.x += this.speedX;
-        this.y += this.speedY;
-        this.opacity = 0.1 + 0.25 * Math.abs(Math.sin(t * this.pulseSpeed + this.pulsePhase));
-        if (this.x < -10) this.x = canvas.width + 10;
-        if (this.x > canvas.width + 10) this.x = -10;
-        if (this.y < -10) this.y = canvas.height + 10;
-        if (this.y > canvas.height + 10) this.y = -10;
-      }
-      draw() {
-        ctx.save();
-        ctx.globalAlpha = this.opacity;
-        ctx.fillStyle = this.color;
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 6;
+    const particles = Array.from({ length: 55 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: Math.random() * 1.5 + 0.3,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      alpha: Math.random() * 0.4 + 0.1,
+    }));
+
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H);
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0) p.x = W;
+        if (p.x > W) p.x = 0;
+        if (p.y < 0) p.y = H;
+        if (p.y > H) p.y = 0;
         ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color + p.alpha + ')';
         ctx.fill();
-        ctx.restore();
       }
-    }
 
-    // Create particles
-    for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
-
-    // Draw connecting lines
-    function drawLines() {
+      // Draw connecting lines
       for (let i = 0; i < particles.length; i++) {
         for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < 120) {
-            ctx.save();
-            ctx.globalAlpha = (1 - dist / 120) * 0.08;
-            ctx.strokeStyle = '#2af0ff';
-            ctx.lineWidth = 0.5;
             ctx.beginPath();
+            ctx.strokeStyle = `rgba(42,240,255,${0.06 * (1 - dist / 120)})`;
+            ctx.lineWidth = 0.6;
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
             ctx.stroke();
-            ctx.restore();
           }
         }
       }
-    }
+      requestAnimationFrame(draw);
+    };
 
-    let frame = 0;
-    function animate() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      frame++;
-      particles.forEach(p => { p.update(frame); p.draw(); });
-      drawLines();
-      requestAnimationFrame(animate);
-    }
+    draw();
+    window.addEventListener('resize', () => {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    });
+  },
 
-    animate();
+  // ── UTILITIES ────────────────────────────────────────────
+  _esc(str) {
+    if (typeof str !== 'string') return String(str || '');
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  },
+
+  _formatBytes(bytes) {
+    if (!bytes || bytes === 0) return '—';
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let i = 0;
+    let val = Number(bytes);
+    while (val >= 1024 && i < units.length - 1) { val /= 1024; i++; }
+    return `${val.toFixed(i > 0 ? 1 : 0)} ${units[i]}`;
   },
 };
 

@@ -1,14 +1,12 @@
 /**
- * ShieldPort — usb-ui.js
- * USB Shield module: device detection, write-protect, UI management
- * All OS-level operations happen in the backend. The UI only shows results.
+ * ShieldPort v2.0 — usb-ui.js
+ * USB Shield: device detection, write-protect, logs
  */
 
 ShieldPort.usb = {
   _logs: [],
   _scanning: false,
 
-  // ── INIT ──────────────────────────────────────────────────
   init() {
     this._bindButtons();
   },
@@ -21,33 +19,31 @@ ShieldPort.usb = {
       ShieldPort.showToast('info', 'Reintentando...', 'Buscando Desktop Agent');
       ShieldPort._connectAgent();
     });
-    document.getElementById('btn-webusb-request')?.addEventListener('click', () => this.requestWebUSB());
   },
 
-  // ── SCAN USB ──────────────────────────────────────────────
   async scanUSB() {
     if (this._scanning) return;
     this._scanning = true;
 
     const btn = document.getElementById('btn-scan-usb');
-    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="scan-spinner">⏳</span> Escaneando...'; }
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = `
+        <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="15" height="15">
+          <path d="M21 12a9 9 0 11-6.219-8.56"/>
+        </svg>
+        <span>Escaneando...</span>`;
+    }
 
     this.appendLog('info', 'Iniciando escaneo de dispositivos USB...');
-    ShieldPort.addActivity('🔍', 'Escaneo USB iniciado');
+    ShieldPort.addActivity('usb', 'Escaneo USB iniciado');
 
     if (ShieldPort.state.agentConnected) {
-      // Agent will respond with DRIVES_LIST message → renderDevices()
       ShieldPort.sendToAgent({ type: 'GET_DRIVES' });
       setTimeout(() => this._endScan(btn), 1500);
     } else {
-      // Fallback: WebUSB only - list paired USB devices
-      try {
-        const devices = await navigator.usb?.getDevices() || [];
-        this._renderWebUsbDevices(devices);
-        this.appendLog('info', `WebUSB: ${devices.length} dispositivo(s) emparejado(s)`);
-      } catch (e) {
-        this.appendLog('warn', 'WebUSB no disponible en este navegador');
-      }
+      ShieldPort.showToast('warning', 'Sin Desktop Agent', 'Inicia el Desktop Agent para escanear USBs');
+      this.appendLog('warn', 'Desktop Agent no conectado — usa el Desktop Agent para escanear USBs');
       this._endScan(btn);
     }
   },
@@ -56,12 +52,16 @@ ShieldPort.usb = {
     this._scanning = false;
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<span class="btn-icon">🔍</span> Escanear USB';
+      btn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="15" height="15">
+          <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <span>Escanear USB</span>`;
     }
-    ShieldPort.addActivity('✅', 'Escaneo USB completado');
+    ShieldPort.addActivity('check', 'Escaneo USB completado');
   },
 
-  // ── RENDER DEVICES (from Desktop Agent) ──────────────────
+  // ── RENDER DEVICES ──────────────────────────────────────
   renderDevices(drives) {
     const list = document.getElementById('usb-devices-list');
     if (!list) return;
@@ -71,16 +71,23 @@ ShieldPort.usb = {
     if (usbDrives.length === 0) {
       list.innerHTML = `
         <div class="empty-state">
-          <div class="empty-icon">🔌</div>
-          <p>Sin dispositivos USB detectados</p>
-          <small>Conecta un dispositivo USB y presiona Escanear</small>
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <path d="M12 2v12M9 6l3-4 3 4"/>
+              <path d="M7 14a5 5 0 0010 0"/>
+            </svg>
+          </div>
+          <p class="empty-title">Sin dispositivos USB</p>
+          <p class="empty-subtitle">Conecta un dispositivo y presiona Escanear</p>
         </div>`;
       return;
     }
 
-    list.innerHTML = usbDrives.map(drive => this._buildDeviceCard(drive)).join('');
+    list.innerHTML = usbDrives.map((drive, idx) =>
+      this._buildDeviceCard(drive, idx)
+    ).join('');
 
-    // Bind action buttons
+    // Bind buttons
     usbDrives.forEach(drive => {
       const id = this._driveId(drive);
       document.getElementById(`btn-protect-${id}`)?.addEventListener('click', () => this.protectDrive(drive));
@@ -88,20 +95,47 @@ ShieldPort.usb = {
     });
   },
 
-  _buildDeviceCard(drive) {
-    const id = this._driveId(drive);
-    const usedPct = drive.size > 0 ? Math.round(((drive.size - drive.available) / drive.size) * 100) : 0;
-    const statusClass = drive.readOnly ? 'locked' : 'unlocked';
-    const statusText = drive.readOnly ? '🔒 Protegido contra escritura' : '🔓 Sin protección';
-    const statusColor = drive.readOnly ? 'var(--green)' : 'var(--yellow)';
+  _buildDeviceCard(drive, idx) {
+    const id       = this._driveId(drive);
+    const totalBytes = drive.size || 0;
+    const freeBytes  = drive.available || drive.freeSpace || 0;
+    const usedBytes  = totalBytes - freeBytes;
+    const usedPct    = totalBytes > 0 ? Math.min(100, Math.round((usedBytes / totalBytes) * 100)) : 0;
+    const isProtected = drive.readOnly || false;
+
+    const protectedBadge = isProtected
+      ? `<span class="usb-status-badge protected">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="12" height="12">
+             <rect x="3" y="11" width="18" height="11" rx="2"/>
+             <path d="M7 11V7a5 5 0 0110 0v4"/>
+           </svg>
+           Protegido
+         </span>`
+      : `<span class="usb-status-badge unprotected">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="12" height="12">
+             <rect x="3" y="11" width="18" height="11" rx="2"/>
+             <path d="M7 11V7a5 5 0 019.9-1"/>
+           </svg>
+           Sin protección
+         </span>`;
+
+    const progressColor = usedPct > 85
+      ? 'linear-gradient(90deg,var(--red),#b91c3c)'
+      : 'linear-gradient(90deg,var(--cyan),var(--blue))';
 
     return `
-      <div class="usb-device-card" id="drive-card-${id}">
+      <div class="usb-device-card" id="drive-card-${id}" style="animation-delay:${idx * 60}ms">
         <div class="usb-device-header">
           <div class="usb-device-name">
-            💾 ${ShieldPort._esc(drive.name || drive.device || 'USB Drive')}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" width="16" height="16">
+              <path d="M12 2v12M9 6l3-4 3 4"/>
+              <circle cx="9" cy="10" r="1.5" fill="currentColor" stroke="none"/>
+              <circle cx="15" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+              <path d="M7 14a5 5 0 0010 0"/>
+            </svg>
+            ${ShieldPort._esc(drive.name || drive.device || 'USB Drive')}
           </div>
-          <span class="lock-anim ${statusClass}" style="color:${statusColor}">${statusText}</span>
+          ${protectedBadge}
         </div>
 
         <div class="usb-device-grid">
@@ -110,167 +144,124 @@ ShieldPort.usb = {
             <span class="usb-info-value">${ShieldPort._esc(drive.mount || drive.device || '—')}</span>
           </div>
           <div class="usb-info-item">
-            <span class="usb-info-label">Sistema archivos</span>
-            <span class="usb-info-value">${ShieldPort._esc(drive.fsType || '—')}</span>
+            <span class="usb-info-label">Tamaño Total</span>
+            <span class="usb-info-value">${ShieldPort._formatBytes(totalBytes)}</span>
           </div>
           <div class="usb-info-item">
-            <span class="usb-info-label">Tamaño total</span>
-            <span class="usb-info-value">${ShieldPort._formatBytes(drive.size)}</span>
+            <span class="usb-info-label">Espacio Libre</span>
+            <span class="usb-info-value">${ShieldPort._formatBytes(freeBytes)}</span>
           </div>
           <div class="usb-info-item">
-            <span class="usb-info-label">Espacio libre</span>
-            <span class="usb-info-value">${ShieldPort._formatBytes(drive.available)}</span>
+            <span class="usb-info-label">Usado</span>
+            <span class="usb-info-value">${usedPct}%</span>
           </div>
-          ${drive.serial ? `
-          <div class="usb-info-item">
-            <span class="usb-info-label">Serial</span>
-            <span class="usb-info-value">${ShieldPort._esc(drive.serial)}</span>
-          </div>` : ''}
-          ${drive.connectedAt ? `
-          <div class="usb-info-item">
-            <span class="usb-info-label">Conectado</span>
-            <span class="usb-info-value">${ShieldPort._esc(drive.connectedAt)}</span>
-          </div>` : ''}
         </div>
 
-        ${drive.size > 0 ? `
+        ${totalBytes > 0 ? `
         <div class="usb-storage-bar">
           <div class="usb-storage-bar-label">
-            <span>Usado: ${ShieldPort._formatBytes(drive.size - drive.available)}</span>
-            <span>${usedPct}%</span>
+            <span>${ShieldPort._formatBytes(usedBytes)} usados</span>
+            <span>${ShieldPort._formatBytes(freeBytes)} libres</span>
           </div>
           <div class="progress-bar">
-            <div class="progress-fill" style="width:${usedPct}%; background: ${usedPct > 85 ? 'linear-gradient(90deg,var(--red),#cc0033)' : 'linear-gradient(90deg,var(--cyan),var(--blue))'}"></div>
+            <div class="progress-fill" style="width:${usedPct}%;background:${progressColor}"></div>
           </div>
         </div>` : ''}
 
         <div class="usb-device-actions">
-          ${!drive.readOnly
-            ? `<button class="btn btn-secondary btn-sm" id="btn-protect-${id}">🔒 Proteger</button>`
-            : `<button class="btn btn-ghost btn-sm" id="btn-unprotect-${id}">🔓 Desproteger</button>`
+          ${!isProtected
+            ? `<button class="btn btn-secondary btn-sm" id="btn-protect-${id}">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+                   <rect x="3" y="11" width="18" height="11" rx="2"/>
+                   <path d="M7 11V7a5 5 0 0110 0v4"/>
+                 </svg>
+                 Proteger
+               </button>`
+            : `<button class="btn btn-ghost btn-sm" id="btn-unprotect-${id}">
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+                   <rect x="3" y="11" width="18" height="11" rx="2"/>
+                   <path d="M7 11V7a5 5 0 019.9-1"/>
+                 </svg>
+                 Desproteger
+               </button>`
           }
-          <button class="btn btn-ghost btn-sm" onclick="ShieldPort.usb.refreshDrive('${id}')">🔄 Actualizar</button>
+          <button class="btn btn-ghost btn-sm" onclick="ShieldPort.usb.refreshDrive('${id}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+              <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+            </svg>
+            Actualizar
+          </button>
         </div>
-      </div>
-    `;
+      </div>`;
   },
 
   _driveId(drive) {
     return (drive.device || drive.mount || 'dev').replace(/[^a-zA-Z0-9]/g, '_');
   },
 
-  // ── PROTECT / UNPROTECT ──────────────────────────────────
+  // ── PROTECT / UNPROTECT ─────────────────────────────────
   async protectDrive(drive) {
     const confirmed = await ShieldPort.confirm(
-      '🔒',
       'Proteger contra escritura',
       `¿Confirmas proteger "${drive.name || drive.device}"?\n\nEste dispositivo quedará en modo solo-lectura hasta que lo desproteja manualmente.`,
-      'Proteger',
-      'primary'
+      'Proteger', 'primary'
     );
     if (!confirmed) return;
 
     this.appendLog('info', `Aplicando protección en ${drive.device || drive.mount}...`);
-    ShieldPort.addActivity('🔒', `Protegiendo: ${drive.name || drive.device}`);
+    ShieldPort.addActivity('lock', `Protegiendo: ${drive.name || drive.device}`);
 
-    if (!ShieldPort.sendToAgent({ type: 'PROTECT_DRIVE', device: drive.device, mount: drive.mount })) {
-      ShieldPort.showToast('warning', 'Sin conexión al agente', 'Activa el Desktop Agent para esta función');
+    if (!ShieldPort.sendToAgent({ type: 'PROTECT_DRIVE', driveId: drive.device, device: drive.device, mount: drive.mount })) {
+      ShieldPort.showToast('warning', 'Sin Desktop Agent', 'Activa el Desktop Agent para esta función');
     }
   },
 
   async unprotectDrive(drive) {
     const confirmed = await ShieldPort.confirm(
-      '🔓',
-      'Desproteger dispositivo',
-      `¿Confirmas quitar la protección de "${drive.name || drive.device}"?\n\nEl dispositivo podrá ser modificado o formateado.`,
-      'Desproteger',
-      'danger'
+      'Quitar protección',
+      `¿Confirmas quitar la protección de "${drive.name || drive.device}"?\n\nEl dispositivo podrá recibir escrituras.`,
+      'Desproteger', 'danger'
     );
     if (!confirmed) return;
 
     this.appendLog('info', `Quitando protección de ${drive.device || drive.mount}...`);
-    ShieldPort.addActivity('🔓', `Desprotegiendo: ${drive.name || drive.device}`);
+    ShieldPort.addActivity('unlock', `Desprotegiendo: ${drive.name || drive.device}`);
 
-    if (!ShieldPort.sendToAgent({ type: 'UNPROTECT_DRIVE', device: drive.device, mount: drive.mount })) {
-      ShieldPort.showToast('warning', 'Sin conexión al agente', 'Activa el Desktop Agent para esta función');
+    if (!ShieldPort.sendToAgent({ type: 'UNPROTECT_DRIVE', driveId: drive.device, device: drive.device, mount: drive.mount })) {
+      ShieldPort.showToast('warning', 'Sin Desktop Agent', 'Activa el Desktop Agent para esta función');
     }
   },
 
   onProtectResult(msg) {
     if (msg.success) {
-      ShieldPort.showToast('success', 'Protección aplicada', `El dispositivo ahora está protegido contra escritura`);
-      ShieldPort.addAlert('🔒', `${msg.device} protegido correctamente`, 'success');
-      this.appendLog('info', `✅ Protección aplicada correctamente en ${msg.device}`);
+      ShieldPort.showToast('success', 'USB Protegido', 'El dispositivo está en modo solo-lectura');
+      ShieldPort.addAlert('shield', `${msg.driveId || 'USB'} protegido`, 'success');
+      this.appendLog('info', `✅ Protección aplicada en ${msg.driveId}`);
     } else {
-      ShieldPort.showToast('error', 'Error al proteger', msg.error || 'No se pudo aplicar la protección');
-      this.appendLog('error', `❌ Error al proteger: ${msg.error}`);
+      ShieldPort.showToast('error', 'Error al proteger', msg.message || 'No se pudo aplicar la protección');
+      this.appendLog('error', `❌ Error al proteger: ${msg.message}`);
     }
-    // Refresh drives
     setTimeout(() => ShieldPort.sendToAgent({ type: 'GET_DRIVES' }), 800);
   },
 
   onUnprotectResult(msg) {
     if (msg.success) {
       ShieldPort.showToast('success', 'Protección eliminada', 'El dispositivo ya puede recibir escrituras');
-      ShieldPort.addAlert('🔓', `${msg.device} desprotegido`, 'warning');
-      this.appendLog('info', `✅ Protección eliminada en ${msg.device}`);
+      ShieldPort.addAlert('shield', `${msg.driveId || 'USB'} desprotegido`, 'warning');
+      this.appendLog('info', `✅ Protección eliminada en ${msg.driveId}`);
     } else {
-      ShieldPort.showToast('error', 'Error al desproteger', msg.error || 'No se pudo quitar la protección');
-      this.appendLog('error', `❌ Error al desproteger: ${msg.error}`);
+      ShieldPort.showToast('error', 'Error al desproteger', msg.message || 'No se pudo quitar la protección');
+      this.appendLog('error', `❌ Error al desproteger: ${msg.message}`);
     }
     setTimeout(() => ShieldPort.sendToAgent({ type: 'GET_DRIVES' }), 800);
   },
 
   refreshDrive(id) {
     ShieldPort.sendToAgent({ type: 'GET_DRIVES' });
-    ShieldPort.showToast('info', 'Actualizando...', 'Refrescando información del dispositivo');
+    ShieldPort.showToast('info', 'Actualizando...', 'Refrescando lista de dispositivos');
   },
 
-  // ── WEB USB (raw access in browser) ──────────────────────
-  async requestWebUSB() {
-    if (!ShieldPort.state.webUsbSupported) {
-      ShieldPort.showToast('warning', 'WebUSB no disponible', 'Este navegador no soporta WebUSB. Usa Chrome o Edge.');
-      return;
-    }
-    try {
-      const device = await navigator.usb.requestDevice({ filters: [] });
-      const infoEl = document.getElementById('webusb-device-info');
-      if (infoEl) {
-        infoEl.style.display = 'block';
-        infoEl.innerHTML = `
-          <strong>Dispositivo:</strong> ${ShieldPort._esc(device.productName || 'Desconocido')}<br>
-          <strong>Fabricante:</strong> ${ShieldPort._esc(device.manufacturerName || '—')}<br>
-          <strong>VID:</strong> 0x${device.vendorId.toString(16).padStart(4,'0').toUpperCase()}<br>
-          <strong>PID:</strong> 0x${device.productId.toString(16).padStart(4,'0').toUpperCase()}<br>
-          <strong>Serial:</strong> ${ShieldPort._esc(device.serialNumber || '—')}<br>
-          <strong>Versión USB:</strong> ${device.usbVersionMajor}.${device.usbVersionMinor}
-        `;
-      }
-      ShieldPort.addActivity('🔌', `WebUSB: ${device.productName || 'Dispositivo conectado'}`);
-      ShieldPort.showToast('success', 'Dispositivo USB', `${device.productName || 'Acceso concedido'}`);
-    } catch (e) {
-      if (e.name === 'NotFoundError') {
-        // User cancelled — no error needed
-      } else {
-        ShieldPort.showToast('error', 'Error WebUSB', e.message);
-      }
-    }
-  },
-
-  _renderWebUsbDevices(devices) {
-    const infoEl = document.getElementById('webusb-device-info');
-    if (!infoEl) return;
-    if (devices.length === 0) {
-      infoEl.style.display = 'none';
-      return;
-    }
-    infoEl.style.display = 'block';
-    infoEl.innerHTML = devices.map(d =>
-      `<div>📱 ${ShieldPort._esc(d.productName || 'USB')} — VID:0x${d.vendorId.toString(16)}</div>`
-    ).join('');
-  },
-
-  // ── LOGS ──────────────────────────────────────────────────
+  // ── LOGS ────────────────────────────────────────────────
   appendLog(level, message) {
     const time = new Date().toLocaleTimeString('es', { hour12: false });
     this._logs.unshift({ level, message, time });
@@ -280,10 +271,9 @@ ShieldPort.usb = {
     if (logEl) {
       const entry = document.createElement('div');
       entry.className = 'log-entry';
-      const cls = level === 'error' ? 'log-err' : level === 'warn' ? 'log-warn' : 'log-msg';
+      const cls = level === 'error' ? 'log-err' : level === 'warn' ? 'log-warn' : level === 'success' ? 'log-ok' : 'log-msg';
       entry.innerHTML = `<span class="log-time">${time}</span><span class="${cls}">${ShieldPort._esc(message)}</span>`;
       logEl.prepend(entry);
-      // Keep max 100 visible
       while (logEl.children.length > 100) logEl.removeChild(logEl.lastChild);
     }
   },
@@ -293,7 +283,7 @@ ShieldPort.usb = {
     if (panel) panel.style.display = 'block';
     const logEl = document.getElementById('usb-log-entries');
     if (logEl && this._logs.length === 0) {
-      logEl.innerHTML = '<div class="log-entry"><span class="log-time">—</span><span class="log-msg">Sin entradas de log aún. Realiza un escaneo.</span></div>';
+      logEl.innerHTML = '<div class="log-entry"><span class="log-time">—</span><span class="log-msg">Sin entradas. Realiza un escaneo primero.</span></div>';
     }
   },
 
@@ -303,5 +293,4 @@ ShieldPort.usb = {
   },
 };
 
-// Auto-init when app is ready
 document.addEventListener('DOMContentLoaded', () => ShieldPort.usb.init());

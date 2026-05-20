@@ -24,7 +24,7 @@ const usbService = {
   async _fetchDrives(verbose) {
     return new Promise((resolve, reject) => {
       // DriveType 2 = Removable Disk
-      const psCommand = `powershell -NoProfile -Command "Get-CimInstance Win32_LogicalDisk | Where-Object DriveType -eq 2 | Select-Object DeviceID, VolumeName, Size | ConvertTo-Json -Compress"`;
+      const psCommand = `powershell -NoProfile -Command "Get-CimInstance Win32_LogicalDisk | Where-Object DriveType -eq 2 | Select-Object DeviceID, VolumeName, Size, FreeSpace | ConvertTo-Json -Compress"`;
       
       exec(psCommand, (error, stdout, stderr) => {
         if (error) {
@@ -51,8 +51,10 @@ const usbService = {
               device: d.DeviceID,
               mount: d.DeviceID + '\\',
               size: parseInt(d.Size || 0, 10),
+              available: parseInt(d.FreeSpace || 0, 10),
+              freeSpace: parseInt(d.FreeSpace || 0, 10),
               isUsb: true,
-              readOnly: false // Cannot easily determine write protection securely from WMI alone without access denied checks
+              readOnly: false
             };
           });
           
