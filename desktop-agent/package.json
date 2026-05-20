@@ -7,8 +7,7 @@
     "start": "node main.js"
   },
   "dependencies": {
-    "ws": "^8.16.0",
-    "drivelist": "^12.0.0"
+    "ws": "^8.16.0"
   },
   "author": "ShieldPort",
   "license": "ISC"

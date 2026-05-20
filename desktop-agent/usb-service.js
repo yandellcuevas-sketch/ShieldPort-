@@ -2,7 +2,6 @@
  * ShieldPort — usb-service.js
  * Interfaces with system tools to list and protect USB drives.
  */
-const drivelist = require('drivelist');
 const { exec } = require('child_process');
 const os = require('os');
 const fs = require('fs');
@@ -11,7 +10,7 @@ const path = require('path');
 const platform = os.platform();
 
 const usbService = {
-  onLog: (level, msg) => console.log(`[${level}] ${msg}`),
+  onLog: (level, msg) => console.log(`[${level.toUpperCase()}] ${msg}`),
 
   async getDrives() {
     this.onLog('info', 'Scanning system drives...');
@@ -23,32 +22,48 @@ const usbService = {
   },
 
   async _fetchDrives(verbose) {
-    try {
-      const drives = await drivelist.list();
-      const usbDrives = drives
-        .filter(d => d.isUSB || d.isRemovable)
-        .map(d => {
-          const mount = d.mountpoints && d.mountpoints.length > 0 
-            ? d.mountpoints[0].path 
-            : d.device;
-            
-          return {
-            id: d.device,
-            name: d.description || 'USB Drive',
-            device: d.device,
-            mount: mount,
-            size: d.size,
-            isUsb: true,
-            readOnly: d.isReadOnly || false
-          };
-        });
+    return new Promise((resolve, reject) => {
+      // DriveType 2 = Removable Disk
+      const psCommand = `powershell -NoProfile -Command "Get-CimInstance Win32_LogicalDisk | Where-Object DriveType -eq 2 | Select-Object DeviceID, VolumeName, Size | ConvertTo-Json -Compress"`;
       
-      if (verbose) this.onLog('success', `Found ${usbDrives.length} USB drive(s)`);
-      return usbDrives;
-    } catch (e) {
-      if (verbose) this.onLog('error', 'Failed to scan drives: ' + e.message);
-      throw e;
-    }
+      exec(psCommand, (error, stdout, stderr) => {
+        if (error) {
+          if (verbose) this.onLog('error', 'Failed to scan drives: ' + error.message);
+          return reject(error);
+        }
+        
+        try {
+          const output = stdout.trim();
+          if (!output) {
+            if (verbose) this.onLog('success', `Found 0 USB drive(s)`);
+            return resolve([]);
+          }
+          
+          let parsed = JSON.parse(output);
+          if (!Array.isArray(parsed)) {
+            parsed = [parsed];
+          }
+          
+          const usbDrives = parsed.map(d => {
+            return {
+              id: d.DeviceID,
+              name: d.VolumeName || 'USB Drive',
+              device: d.DeviceID,
+              mount: d.DeviceID + '\\',
+              size: parseInt(d.Size || 0, 10),
+              isUsb: true,
+              readOnly: false // Cannot easily determine write protection securely from WMI alone without access denied checks
+            };
+          });
+          
+          if (verbose) this.onLog('success', `Found ${usbDrives.length} USB drive(s)`);
+          resolve(usbDrives);
+        } catch (e) {
+          if (verbose) this.onLog('error', 'Failed to parse drives: ' + e.message);
+          reject(e);
+        }
+      });
+    });
   },
 
   async protectDrive(driveId) {
