@@ -33,6 +33,26 @@ wss.on('connection', (ws) => {
           const uResult = await usbService.unprotectDrive(msg.driveId);
           ws.send(JSON.stringify({ type: 'DRIVE_UNPROTECTED', success: uResult.success, driveId: msg.driveId, message: uResult.message }));
           break;
+
+        case 'GET_BITLOCKER_STATUS':
+          const blStatus = await usbService.getBitlockerStatus(msg.driveId);
+          ws.send(JSON.stringify({ type: 'BITLOCKER_STATUS', driveId: msg.driveId, status: blStatus.status, locked: blStatus.locked }));
+          break;
+
+        case 'ENABLE_BITLOCKER':
+          const eResult = await usbService.enableBitlocker(msg.driveId, msg.password);
+          ws.send(JSON.stringify({ type: 'BITLOCKER_ENABLED', success: eResult.success, driveId: msg.driveId, message: eResult.message }));
+          break;
+
+        case 'DISABLE_BITLOCKER':
+          const dResult = await usbService.disableBitlocker(msg.driveId);
+          ws.send(JSON.stringify({ type: 'BITLOCKER_DISABLED', success: dResult.success, driveId: msg.driveId, message: dResult.message }));
+          break;
+
+        case 'UNLOCK_BITLOCKER':
+          const unlResult = await usbService.unlockBitlocker(msg.driveId, msg.password);
+          ws.send(JSON.stringify({ type: 'BITLOCKER_UNLOCKED', success: unlResult.success, driveId: msg.driveId, message: unlResult.message }));
+          break;
           
         default:
           console.log('Unknown message type:', msg.type);

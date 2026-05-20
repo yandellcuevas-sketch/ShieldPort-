@@ -143,6 +143,96 @@ const usbService = {
         }
       });
     });
+  },
+
+  // ── BITLOCKER (PASSWORD) ────────────────────────────────
+  async getBitlockerStatus(driveId) {
+    if (platform !== 'win32') return { status: 'Unsupported', locked: false };
+    return new Promise((resolve) => {
+      const letter = driveId.replace(/[:\\/]/g, '').toUpperCase() + ':';
+      const ps = `powershell -NoProfile -Command "$v = Get-BitLockerVolume -MountPoint '${letter}' -ErrorAction SilentlyContinue; if ($v) { @{ VolumeStatus = $v.VolumeStatus.ToString(); ProtectionStatus = $v.ProtectionStatus.ToString() } | ConvertTo-Json -Compress } else { '{}' }"`;
+      
+      exec(ps, (error, stdout) => {
+        try {
+          const res = JSON.parse(stdout.trim() || '{}');
+          if (!res.VolumeStatus) {
+             return resolve({ status: 'Unencrypted', locked: false });
+          }
+          
+          let status = 'Unencrypted';
+          let locked = false;
+
+          if (res.VolumeStatus === 'FullyEncrypted') status = 'Encrypted';
+          else if (res.VolumeStatus === 'EncryptionInProgress') status = 'Encrypting';
+          else if (res.VolumeStatus === 'DecryptionInProgress') status = 'Decrypting';
+          else if (res.VolumeStatus === 'Locked') {
+            status = 'Encrypted';
+            locked = true;
+          }
+
+          if (res.ProtectionStatus === 'Unknown' && status !== 'Unencrypted') locked = true;
+
+          resolve({ status, locked });
+        } catch(e) {
+          resolve({ status: 'Unencrypted', locked: false });
+        }
+      });
+    });
+  },
+
+  async enableBitlocker(driveId, password) {
+    this.onLog('info', `Configuring BitLocker password for: ${driveId}`);
+    return new Promise((resolve) => {
+      const letter = driveId.replace(/[:\\/]/g, '').toUpperCase() + ':';
+      // Enable BitLocker securely via PowerShell using -UsedSpaceOnly for speed
+      const ps = `powershell -NoProfile -Command "$sec = ConvertTo-SecureString '${password.replace(/'/g, "''")}' -AsPlainText -Force; Enable-BitLocker -MountPoint '${letter}' -PasswordProtector $sec -UsedSpaceOnly -SkipHardwareTest"`;
+      
+      exec(ps, (error, stdout) => {
+        if (error) {
+          this.onLog('error', `Failed to configure password: ${error.message}`);
+          resolve({ success: false, message: error.message });
+        } else {
+          this.onLog('success', `Password configured for ${driveId}`);
+          resolve({ success: true, message: 'Contraseña configurada. Cifrado en curso o completado.' });
+        }
+      });
+    });
+  },
+
+  async disableBitlocker(driveId) {
+    this.onLog('info', `Removing BitLocker password from: ${driveId}`);
+    return new Promise((resolve) => {
+      const letter = driveId.replace(/[:\\/]/g, '').toUpperCase() + ':';
+      const ps = `powershell -NoProfile -Command "Disable-BitLocker -MountPoint '${letter}'"`;
+      
+      exec(ps, (error, stdout) => {
+        if (error) {
+          this.onLog('error', `Failed to remove password: ${error.message}`);
+          resolve({ success: false, message: error.message });
+        } else {
+          this.onLog('success', `Password removed from ${driveId}`);
+          resolve({ success: true, message: 'Contraseña eliminada correctamente.' });
+        }
+      });
+    });
+  },
+
+  async unlockBitlocker(driveId, password) {
+    this.onLog('info', `Attempting to unlock ${driveId}`);
+    return new Promise((resolve) => {
+      const letter = driveId.replace(/[:\\/]/g, '').toUpperCase() + ':';
+      const ps = `powershell -NoProfile -Command "$sec = ConvertTo-SecureString '${password.replace(/'/g, "''")}' -AsPlainText -Force; Unlock-BitLocker -MountPoint '${letter}' -Password $sec"`;
+      
+      exec(ps, (error, stdout) => {
+        if (error) {
+          this.onLog('error', `Failed to unlock: ${error.message}`);
+          resolve({ success: false, message: 'Contraseña incorrecta o error al desbloquear.' });
+        } else {
+          this.onLog('success', `${driveId} unlocked successfully`);
+          resolve({ success: true, message: 'Dispositivo desbloqueado correctamente.' });
+        }
+      });
+    });
   }
 };
 

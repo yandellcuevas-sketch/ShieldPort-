@@ -159,6 +159,16 @@ const ShieldPort = {
         if (this.usb) this.usb.onUnprotectResult(msg);
         break;
 
+      case 'BITLOCKER_STATUS':
+        if (this.usb) this.usb.updateBitlockerStatus(msg);
+        break;
+
+      case 'BITLOCKER_ENABLED':
+      case 'BITLOCKER_DISABLED':
+      case 'BITLOCKER_UNLOCKED':
+        if (this.usb) this.usb.onBitlockerResult(msg);
+        break;
+
       case 'LOG':
         if (this.usb) this.usb.appendLog(msg.level, msg.message);
         break;
@@ -402,6 +412,62 @@ const ShieldPort = {
 
       cancelX.onclick = () => done(false);
       cancelBtn.onclick = () => done(false);
+    });
+  },
+
+  // ── PASSWORD MODAL ───────────────────────────────────────
+  promptPassword(title, desc, confirm = false) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('password-modal');
+      const titleEl = document.getElementById('password-modal-title');
+      const descEl = document.getElementById('password-modal-desc');
+      const input = document.getElementById('password-input');
+      const confirmGroup = document.getElementById('password-confirm-group');
+      const confirmInput = document.getElementById('password-confirm-input');
+      const okBtn = document.getElementById('password-modal-ok');
+      const cancelX = document.getElementById('password-modal-close');
+      const cancelBtn = document.getElementById('password-modal-cancel');
+
+      if (!modal) { resolve(null); return; }
+
+      titleEl.textContent = title;
+      descEl.textContent = desc;
+      input.value = '';
+      confirmInput.value = '';
+      
+      if (confirm) {
+        confirmGroup.style.display = 'block';
+      } else {
+        confirmGroup.style.display = 'none';
+      }
+
+      modal.style.display = 'flex';
+      setTimeout(() => input.focus(), 100);
+
+      const done = (val) => {
+        modal.style.display = 'none';
+        resolve(val);
+      };
+
+      const newOk = okBtn.cloneNode(true);
+      okBtn.parentNode.replaceChild(newOk, okBtn);
+      
+      newOk.addEventListener('click', () => {
+        const p1 = input.value;
+        const p2 = confirmInput.value;
+        if (!p1) {
+          ShieldPort.showToast('warning', 'Contraseña vacía', 'Debes escribir una contraseña');
+          return;
+        }
+        if (confirm && p1 !== p2) {
+          ShieldPort.showToast('error', 'No coinciden', 'Las contraseñas no son iguales');
+          return;
+        }
+        done(p1);
+      });
+
+      cancelX.onclick = () => done(null);
+      cancelBtn.onclick = () => done(null);
     });
   },
 

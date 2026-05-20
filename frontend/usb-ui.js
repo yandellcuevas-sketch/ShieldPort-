@@ -92,6 +92,11 @@ ShieldPort.usb = {
       const id = this._driveId(drive);
       document.getElementById(`btn-protect-${id}`)?.addEventListener('click', () => this.protectDrive(drive));
       document.getElementById(`btn-unprotect-${id}`)?.addEventListener('click', () => this.unprotectDrive(drive));
+      
+      // Request BitLocker status
+      if (ShieldPort.state.agentConnected) {
+        ShieldPort.sendToAgent({ type: 'GET_BITLOCKER_STATUS', driveId: drive.device });
+      }
     });
   },
 
@@ -144,16 +149,16 @@ ShieldPort.usb = {
             <span class="usb-info-value">${ShieldPort._esc(drive.mount || drive.device || '—')}</span>
           </div>
           <div class="usb-info-item">
+            <span class="usb-info-label">Cifrado (BitLocker)</span>
+            <span class="usb-info-value" id="bl-status-${id}">Cargando...</span>
+          </div>
+          <div class="usb-info-item">
             <span class="usb-info-label">Tamaño Total</span>
             <span class="usb-info-value">${ShieldPort._formatBytes(totalBytes)}</span>
           </div>
           <div class="usb-info-item">
             <span class="usb-info-label">Espacio Libre</span>
             <span class="usb-info-value">${ShieldPort._formatBytes(freeBytes)}</span>
-          </div>
-          <div class="usb-info-item">
-            <span class="usb-info-label">Usado</span>
-            <span class="usb-info-value">${usedPct}%</span>
           </div>
         </div>
 
@@ -189,6 +194,10 @@ ShieldPort.usb = {
             </svg>
             Actualizar
           </button>
+        </div>
+
+        <div class="usb-device-actions" id="bl-actions-${id}" style="margin-top:8px; border-top:1px solid var(--border); padding-top:12px; display:none;">
+          <!-- dynamically populated by BitLocker status -->
         </div>
       </div>`;
   },
@@ -259,7 +268,99 @@ ShieldPort.usb = {
     ShieldPort.showToast('info', 'Actualizando...', 'Refrescando lista de dispositivos');
   },
 
+  // ── BITLOCKER ───────────────────────────────────────────
+  updateBitlockerStatus(msg) {
+    const id = (msg.driveId || '').replace(/[^a-zA-Z0-9]/g, '_');
+    const statusEl = document.getElementById(`bl-status-${id}`);
+    const actionsEl = document.getElementById(`bl-actions-${id}`);
+    if (!statusEl || !actionsEl) return;
+    
+    actionsEl.style.display = 'flex';
+    
+    if (msg.status === 'Unencrypted') {
+       statusEl.innerHTML = `<span style="color:var(--text-muted)">Sin contraseña</span>`;
+       actionsEl.innerHTML = `
+         <button class="btn btn-ghost btn-sm" style="color:var(--purple)" onclick="ShieldPort.usb.enableBitlocker('${msg.driveId}')">
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+             <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+           </svg>
+           Poner Contraseña
+         </button>
+       `;
+    } else if (msg.status === 'Encrypting') {
+       statusEl.innerHTML = `<span style="color:var(--cyan)">Cifrando...</span>`;
+       actionsEl.innerHTML = `<span style="font-size:12px;color:var(--text-muted)">Proceso en curso. No desconectes.</span>`;
+    } else if (msg.status === 'Decrypting') {
+       statusEl.innerHTML = `<span style="color:var(--cyan)">Descifrando...</span>`;
+       actionsEl.innerHTML = `<span style="font-size:12px;color:var(--text-muted)">Proceso en curso. No desconectes.</span>`;
+    } else if (msg.status === 'Encrypted') {
+       if (msg.locked) {
+         statusEl.innerHTML = `<span class="badge badge-red">Bloqueado</span>`;
+         actionsEl.innerHTML = `
+           <button class="btn btn-primary btn-sm" onclick="ShieldPort.usb.unlockBitlocker('${msg.driveId}')">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+               <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>
+             </svg>
+             Desbloquear
+           </button>
+         `;
+       } else {
+         statusEl.innerHTML = `<span class="badge badge-purple" style="background:rgba(168,85,247,0.15);color:#c084fc;">Desbloqueado</span>`;
+         actionsEl.innerHTML = `
+           <button class="btn btn-ghost btn-sm" onclick="ShieldPort.usb.disableBitlocker('${msg.driveId}')">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+               <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>
+             </svg>
+             Quitar Contraseña
+           </button>
+         `;
+       }
+    }
+  },
+
+  async enableBitlocker(driveId) {
+    const pw = await ShieldPort.promptPassword(
+      'Poner Contraseña', 
+      'Cifrará el espacio usado del USB con contraseña. Asegúrate de no olvidarla.',
+      true
+    );
+    if (!pw) return;
+    ShieldPort.showToast('info', 'Iniciando...', 'Configurando contraseña. No desconectes el USB.');
+    ShieldPort.sendToAgent({ type: 'ENABLE_BITLOCKER', driveId, password: pw });
+  },
+
+  async unlockBitlocker(driveId) {
+    const pw = await ShieldPort.promptPassword(
+      'Desbloquear USB', 
+      'Ingresa tu contraseña para acceder a los archivos del USB.',
+      false
+    );
+    if (!pw) return;
+    ShieldPort.showToast('info', 'Desbloqueando...', 'Verificando contraseña');
+    ShieldPort.sendToAgent({ type: 'UNLOCK_BITLOCKER', driveId, password: pw });
+  },
+
+  async disableBitlocker(driveId) {
+    const confirmed = await ShieldPort.confirm('Quitar Contraseña', '¿Estás seguro de quitar la contraseña? El USB quedará desprotegido. El descifrado tardará unos minutos.', 'Quitar', 'danger');
+    if (!confirmed) return;
+    ShieldPort.showToast('info', 'Iniciando', 'Quitando contraseña. No desconectes el USB...');
+    ShieldPort.sendToAgent({ type: 'DISABLE_BITLOCKER', driveId });
+  },
+
+  onBitlockerResult(msg) {
+    if (msg.success) {
+      ShieldPort.showToast('success', 'Éxito', msg.message);
+    } else {
+      ShieldPort.showToast('error', 'Error', msg.message);
+    }
+    // Refresh status shortly after
+    setTimeout(() => {
+      ShieldPort.sendToAgent({ type: 'GET_BITLOCKER_STATUS', driveId: msg.driveId });
+    }, 1500);
+  },
+
   // ── LOGS ────────────────────────────────────────────────
+
   appendLog(level, message) {
     const time = new Date().toLocaleTimeString('es', { hour12: false });
     this._logs.unshift({ level, message, time });
