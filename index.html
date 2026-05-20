@@ -3,354 +3,533 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="ShieldPort — Plataforma profesional de seguridad USB y generación de QR premium con diseño cyber security futurista." />
-  <meta name="theme-color" content="#0a0b0f" />
+  <meta name="description" content="ShieldPort — Plataforma profesional de seguridad USB y generación de QR premium." />
+  <meta name="theme-color" content="#080a0f" />
   <title>ShieldPort — Security Platform</title>
 
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
 
-  <!-- QRCode.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<!-- ═══════════════════════════════════════════════════
-     PARTICLES BACKGROUND
-════════════════════════════════════════════════════ -->
+<!-- Particles -->
 <div id="particles-bg" aria-hidden="true">
   <canvas id="particles-canvas"></canvas>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     SIDEBAR NAV
-════════════════════════════════════════════════════ -->
+<!-- ══════════════════════════════════════════
+     SIDEBAR
+══════════════════════════════════════════ -->
 <nav id="sidebar" role="navigation" aria-label="Main navigation">
-  <div class="sidebar-header">
-    <div class="logo-container">
-      <div class="logo-icon" aria-hidden="true">
-        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M24 4L6 12V24C6 33.9 14.1 43.2 24 46C33.9 43.2 42 33.9 42 24V12L24 4Z" stroke="url(#shield-grad)" stroke-width="2" fill="url(#shield-fill)"/>
-          <!-- Circuit lines -->
-          <line x1="16" y1="22" x2="32" y2="22" stroke="url(#circuit-grad)" stroke-width="1.5"/>
-          <line x1="24" y1="16" x2="24" y2="32" stroke="url(#circuit-grad)" stroke-width="1.5"/>
-          <circle cx="16" cy="22" r="2" fill="#2af0ff"/>
-          <circle cx="32" cy="22" r="2" fill="#0099ff"/>
-          <circle cx="24" cy="16" r="2" fill="#00ff9d"/>
-          <circle cx="24" cy="32" r="2" fill="#2af0ff"/>
-          <!-- USB symbol -->
-          <path d="M20 26 L20 30 L28 30 L28 26" stroke="#2af0ff" stroke-width="1.2" fill="none"/>
-          <defs>
-            <linearGradient id="shield-grad" x1="6" y1="4" x2="42" y2="46" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#2af0ff"/>
-              <stop offset="100%" stop-color="#0099ff"/>
-            </linearGradient>
-            <linearGradient id="shield-fill" x1="6" y1="4" x2="42" y2="46" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#2af0ff" stop-opacity="0.08"/>
-              <stop offset="100%" stop-color="#0099ff" stop-opacity="0.04"/>
-            </linearGradient>
-            <linearGradient id="circuit-grad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#2af0ff"/>
-              <stop offset="100%" stop-color="#00ff9d"/>
-            </linearGradient>
-          </defs>
-        </svg>
-      </div>
-      <div class="logo-text">
-        <span class="logo-name">Shield<span class="logo-accent">Port</span></span>
-        <span class="logo-version">v1.0 — Security Platform</span>
-      </div>
+
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <div class="logo-mark" aria-hidden="true">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="sg1" x1="6" y1="4" x2="42" y2="46" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#2af0ff"/>
+            <stop offset="100%" stop-color="#3b82f6"/>
+          </linearGradient>
+          <linearGradient id="sf1" x1="6" y1="4" x2="42" y2="46" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#2af0ff" stop-opacity="0.1"/>
+            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.04"/>
+          </linearGradient>
+        </defs>
+        <path d="M24 4L6 12V24C6 33.9 14.1 43.2 24 46C33.9 43.2 42 33.9 42 24V12L24 4Z"
+              stroke="url(#sg1)" stroke-width="2" fill="url(#sf1)"/>
+        <path d="M17 24h14M24 17v14" stroke="#2af0ff" stroke-width="1.8" stroke-linecap="round"/>
+        <circle cx="17" cy="24" r="2.5" fill="#2af0ff"/>
+        <circle cx="31" cy="24" r="2.5" fill="#3b82f6"/>
+        <circle cx="24" cy="17" r="2.5" fill="#10f28b"/>
+        <circle cx="24" cy="31" r="2.5" fill="#2af0ff"/>
+      </svg>
     </div>
-    <!-- Mobile hamburger -->
+    <div class="logo-wordmark">
+      <span class="logo-name">Shield<span>Port</span></span>
+      <span class="logo-tagline">Security Platform v2.0</span>
+    </div>
     <button id="mobile-menu-toggle" class="hamburger" aria-label="Toggle navigation" aria-expanded="false">
       <span></span><span></span><span></span>
     </button>
   </div>
 
-  <!-- Agent status indicator -->
-  <div id="agent-status-bar" class="agent-status" role="status" aria-live="polite">
-    <div class="agent-dot" id="agent-dot"></div>
-    <span id="agent-label">Detectando Desktop Agent...</span>
+  <!-- Agent strip -->
+  <div id="agent-status-bar" class="sidebar-agent-strip loading" role="status" aria-live="polite">
+    <div class="strip-dot"></div>
+    <span id="agent-label">Conectando...</span>
   </div>
 
-  <ul class="nav-list" role="list">
-    <li>
-      <button class="nav-item active" id="nav-dashboard" data-section="dashboard" aria-current="page">
-        <span class="nav-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>
-        </span>
-        <span class="nav-label">Dashboard</span>
-      </button>
-    </li>
-    <li>
-      <button class="nav-item" id="nav-usb" data-section="usb">
-        <span class="nav-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2v14m0-14l-3 3m3-3l3 3M6 16a3 3 0 006 0M18 16a3 3 0 01-6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="10" r="1.5" fill="currentColor"/><circle cx="15" cy="8" r="1.5" fill="currentColor"/></svg>
-        </span>
-        <span class="nav-label">USB Shield</span>
-        <span class="nav-badge" id="usb-count-badge" style="display:none;">0</span>
-      </button>
-    </li>
+  <!-- Nav -->
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Módulos</div>
 
-    <li>
-      <button class="nav-item" id="nav-qr" data-section="qr">
-        <span class="nav-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="5" width="4" height="4" fill="currentColor" rx="0.5"/><rect x="13" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="15" y="5" width="4" height="4" fill="currentColor" rx="0.5"/><rect x="3" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="15" width="4" height="4" fill="currentColor" rx="0.5"/><rect x="13" y="13" width="4" height="4" rx="0.5" fill="currentColor"/><rect x="19" y="13" width="2" height="2" rx="0.5" fill="currentColor"/><rect x="19" y="17" width="2" height="4" rx="0.5" fill="currentColor"/><rect x="15" y="19" width="4" height="2" rx="0.5" fill="currentColor"/></svg>
-        </span>
-        <span class="nav-label">QR Forge</span>
-      </button>
-    </li>
-  </ul>
+    <ul role="list">
+      <li>
+        <button class="nav-item active" id="nav-dashboard" data-section="dashboard" aria-current="page">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          </svg>
+          <span class="nav-label">Dashboard</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" id="nav-usb" data-section="usb">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v12"/>
+            <path d="M9 6l3-4 3 4"/>
+            <circle cx="9" cy="10" r="1.5" fill="currentColor" stroke="none"/>
+            <line x1="9" y1="10" x2="9" y2="12"/>
+            <circle cx="15" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+            <line x1="15" y1="8" x2="15" y2="12"/>
+            <path d="M7 14a5 5 0 0010 0"/>
+          </svg>
+          <span class="nav-label">USB Shield</span>
+          <span class="nav-badge" id="usb-count-badge" style="display:none;">0</span>
+        </button>
+      </li>
+      <li>
+        <button class="nav-item" id="nav-qr" data-section="qr">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/>
+            <path d="M14 14h3M14 17h1M14 20h3M17 17h3M20 17v3"/>
+          </svg>
+          <span class="nav-label">QR Forge</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
 
+  <!-- Footer -->
   <div class="sidebar-footer">
-    <div class="system-info">
-      <div class="sys-row"><span>OS:</span><span id="sys-os">Detectando...</span></div>
-      <div class="sys-row"><span>WebUSB:</span><span id="sys-webusb">—</span></div>
+    <div class="sys-grid">
+      <div class="sys-row">
+        <span class="sys-k">Sistema</span>
+        <span class="sys-v" id="sys-os">—</span>
+      </div>
+      <div class="sys-row">
+        <span class="sys-k">Puerto WS</span>
+        <span class="sys-v">8765</span>
+      </div>
     </div>
   </div>
 </nav>
 
-<!-- ═══════════════════════════════════════════════════
+<!-- ══════════════════════════════════════════
+     TOP BAR
+══════════════════════════════════════════ -->
+<header id="topbar" role="banner">
+  <div class="topbar-left">
+    <div class="topbar-breadcrumb">
+      <span>ShieldPort</span>
+      <span class="bc-sep">/</span>
+      <span class="bc-current" id="topbar-section-name">Dashboard</span>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="btn btn-ghost btn-sm" id="btn-refresh-dashboard" aria-label="Actualizar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 4v5h5M20 20v-5h-5"/>
+        <path d="M20 9A9 9 0 006 5.5L4 9M4 15a9 9 0 0014 3.5l2-3.5"/>
+      </svg>
+      Actualizar
+    </button>
+    <div class="topbar-agent-pill disconnected" id="topbar-agent-pill">
+      <div class="agent-pill-dot"></div>
+      <span id="topbar-agent-label">Sin agente</span>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════
+     TOAST CONTAINER
+══════════════════════════════════════════ -->
+<div id="toast-container" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- ══════════════════════════════════════════
      MAIN CONTENT
-════════════════════════════════════════════════════ -->
+══════════════════════════════════════════ -->
 <main id="main-content" role="main">
 
-  <!-- ── TOAST NOTIFICATIONS ── -->
-  <div id="toast-container" aria-live="assertive" aria-atomic="true"></div>
-
-  <!-- ══════════════════════════════════
-       SECTION: DASHBOARD
-  ══════════════════════════════════ -->
+  <!-- ════════════════════════════════
+       DASHBOARD
+  ════════════════════════════════ -->
   <section id="section-dashboard" class="section active" aria-label="Dashboard">
+
     <div class="section-header">
-      <div>
+      <div class="section-title-wrap">
+        <span class="section-eyebrow">Vista General</span>
         <h1 class="section-title">Security Dashboard</h1>
-        <p class="section-subtitle">Monitoreo en tiempo real de dispositivos y seguridad</p>
-      </div>
-      <div class="header-actions">
-        <button class="btn btn-ghost btn-sm" id="btn-refresh-dashboard" aria-label="Actualizar dashboard">
-          <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Actualizar
-        </button>
+        <p class="section-subtitle">Monitoreo en tiempo real de dispositivos y actividad</p>
       </div>
     </div>
 
-    <!-- Status Grid -->
+    <!-- Status Cards -->
     <div class="status-grid">
-      <div class="status-card" id="status-usb-card">
-        <div class="status-icon usb-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M12 2v14m0-14l-3 3m3-3l3 3M6 16a3 3 0 006 0M18 16a3 3 0 01-6 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="9" cy="10" r="1.5" fill="currentColor"/><circle cx="15" cy="8" r="1.5" fill="currentColor"/></svg>
+      <div class="status-card sc-usb" id="status-usb-card">
+        <div class="sc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <path d="M12 2v12M9 6l3-4 3 4"/>
+            <circle cx="9" cy="10" r="1.5" fill="currentColor" stroke="none"/>
+            <circle cx="15" cy="8" r="1.5" fill="currentColor" stroke="none"/>
+            <path d="M7 14a5 5 0 0010 0"/>
+          </svg>
         </div>
-        <div class="status-info">
-          <span class="status-label">USB Shield</span>
-          <span class="status-value" id="dash-usb-status">Sin agente</span>
+        <div class="sc-info">
+          <div class="sc-label">USB Shield</div>
+          <div class="sc-value" id="dash-usb-status">Sin agente</div>
         </div>
-        <div class="status-indicator" id="dash-usb-indicator" data-state="offline"></div>
+        <div class="sc-dot" id="dash-usb-indicator" data-state="offline"></div>
       </div>
 
-
-      <div class="status-card" id="status-qr-card">
-        <div class="status-icon qr-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="5" width="4" height="4" fill="currentColor" rx="0.5"/><rect x="13" y="3" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="15" y="5" width="4" height="4" fill="currentColor" rx="0.5"/><rect x="3" y="13" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.5"/><rect x="5" y="15" width="4" height="4" fill="currentColor" rx="0.5"/></svg>
+      <div class="status-card sc-qr" id="status-qr-card">
+        <div class="sc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/>
+            <rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/>
+            <rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/>
+            <rect x="3" y="14" width="7" height="7" rx="1"/>
+            <rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/>
+          </svg>
         </div>
-        <div class="status-info">
-          <span class="status-label">QR Forge</span>
-          <span class="status-value" id="dash-qr-status">Listo</span>
+        <div class="sc-info">
+          <div class="sc-label">QR Forge</div>
+          <div class="sc-value" id="dash-qr-status">Listo</div>
         </div>
-        <div class="status-indicator" id="dash-qr-indicator" data-state="online"></div>
+        <div class="sc-dot" id="dash-qr-indicator" data-state="online"></div>
       </div>
 
-      <div class="status-card" id="status-agent-card">
-        <div class="status-icon agent-icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <div class="status-card sc-agent" id="status-agent-card">
+        <div class="sc-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+            <rect x="2" y="4" width="20" height="14" rx="2"/>
+            <path d="M8 22h8M12 18v4"/>
+          </svg>
         </div>
-        <div class="status-info">
-          <span class="status-label">Desktop Agent</span>
-          <span class="status-value" id="dash-agent-status">Buscando...</span>
+        <div class="sc-info">
+          <div class="sc-label">Desktop Agent</div>
+          <div class="sc-value" id="dash-agent-status">Buscando...</div>
         </div>
-        <div class="status-indicator" id="dash-agent-indicator" data-state="loading"></div>
+        <div class="sc-dot" id="dash-agent-indicator" data-state="loading"></div>
       </div>
     </div>
 
     <!-- Quick Actions -->
     <div class="card mt-6">
       <div class="card-header">
-        <h2 class="card-title">⚡ Accesos Rápidos</h2>
+        <h2 class="card-title">
+          <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+          </svg>
+          Accesos Rápidos
+        </h2>
       </div>
       <div class="quick-actions-grid">
-        <button class="quick-action-btn" id="qa-scan-usb" onclick="ShieldPort.nav('usb'); ShieldPort.usb.scanUSB()">
-          <span class="qa-icon">🔍</span>
+        <button class="qa-btn" id="qa-scan-usb" onclick="ShieldPort.nav('usb'); setTimeout(()=>ShieldPort.usb.scanUSB(),200)">
+          <div class="qa-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+          </div>
           <span class="qa-label">Escanear USB</span>
         </button>
-
-        <button class="quick-action-btn" id="qa-gen-qr" onclick="ShieldPort.nav('qr')">
-          <span class="qa-icon">🔷</span>
+        <button class="qa-btn" id="qa-gen-qr" onclick="ShieldPort.nav('qr')">
+          <div class="qa-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="3" width="7" height="7" rx="1"/>
+              <rect x="14" y="3" width="7" height="7" rx="1"/>
+              <rect x="3" y="14" width="7" height="7" rx="1"/>
+              <path d="M14 14h1M14 17h2M17 14v3M20 14v6M14 20h3"/>
+            </svg>
+          </div>
           <span class="qa-label">Generar QR</span>
         </button>
-        <button class="quick-action-btn" id="qa-protect-usb" onclick="ShieldPort.nav('usb')">
-          <span class="qa-icon">🔒</span>
+        <button class="qa-btn" id="qa-protect-usb" onclick="ShieldPort.nav('usb')">
+          <div class="qa-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+          </div>
           <span class="qa-label">Proteger USB</span>
         </button>
-        <button class="quick-action-btn" id="qa-unprotect-usb" onclick="ShieldPort.nav('usb')">
-          <span class="qa-icon">🔓</span>
+        <button class="qa-btn" id="qa-unprotect-usb" onclick="ShieldPort.nav('usb')">
+          <div class="qa-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 019.9-1"/>
+            </svg>
+          </div>
           <span class="qa-label">Desproteger USB</span>
         </button>
-        <button class="quick-action-btn" id="qa-download-qr" onclick="ShieldPort.nav('qr')">
-          <span class="qa-icon">⬇️</span>
+        <button class="qa-btn" id="qa-download-qr" onclick="ShieldPort.nav('qr')">
+          <div class="qa-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+            </svg>
+          </div>
           <span class="qa-label">Descargar QR</span>
         </button>
-        <button class="quick-action-btn" id="qa-view-logs" onclick="ShieldPort.nav('usb'); ShieldPort.usb.openLogs()">
-          <span class="qa-icon">📋</span>
+        <button class="qa-btn" id="qa-view-logs" onclick="ShieldPort.nav('usb'); ShieldPort.usb.openLogs()">
+          <div class="qa-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+            </svg>
+          </div>
           <span class="qa-label">Ver Logs</span>
         </button>
       </div>
     </div>
 
-    <!-- Recent Activity + Alerts -->
-    <div class="grid-2-col mt-6">
+    <!-- Activity + Alerts -->
+    <div class="grid-2 mt-6">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">🕐 Actividad Reciente</h2>
+          <h2 class="card-title">
+            <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+            Actividad Reciente
+          </h2>
         </div>
         <div id="activity-list" class="activity-list">
           <div class="empty-state">
-            <div class="empty-icon">📊</div>
-            <p>Sin actividad registrada</p>
-            <small>Las acciones aparecerán aquí</small>
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M9 12h6M9 16h6M9 8h2M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"/>
+              </svg>
+            </div>
+            <p class="empty-title">Sin actividad</p>
+            <p class="empty-subtitle">Las acciones aparecerán aquí</p>
           </div>
         </div>
       </div>
 
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">🛡️ Alertas de Seguridad</h2>
+          <h2 class="card-title">
+            <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
+            Alertas de Seguridad
+          </h2>
         </div>
         <div id="alerts-list" class="activity-list">
           <div class="empty-state">
-            <div class="empty-icon" style="color: var(--green)">✅</div>
-            <p>Sin alertas activas</p>
-            <small>Sistema operando con normalidad</small>
+            <div class="empty-icon" style="color:var(--green)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                <path d="M22 4L12 14.01l-3-3"/>
+              </svg>
+            </div>
+            <p class="empty-title">Todo en orden</p>
+            <p class="empty-subtitle">Sistema operando con normalidad</p>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Last USB -->
-    <div class="mt-6">
-      <div class="card">
-        <div class="card-header">
-          <h2 class="card-title">💾 Último USB Detectado</h2>
-        </div>
-        <div id="last-usb-info">
-          <div class="empty-state">
-            <div class="empty-icon">🔌</div>
-            <p>Ningún USB detectado aún</p>
-            <small>Conecta un dispositivo y usa USB Shield</small>
+    <div class="card mt-4">
+      <div class="card-header">
+        <h2 class="card-title">
+          <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          Último USB Detectado
+        </h2>
+      </div>
+      <div id="last-usb-info">
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <path d="M12 2v12M9 6l3-4 3 4"/>
+              <path d="M7 14a5 5 0 0010 0"/>
+            </svg>
           </div>
+          <p class="empty-title">Ningún USB detectado aún</p>
+          <p class="empty-subtitle">Conecta un dispositivo para verlo aquí</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ══════════════════════════════════
-       SECTION: USB SHIELD
-  ══════════════════════════════════ -->
+  <!-- ════════════════════════════════
+       USB SHIELD
+  ════════════════════════════════ -->
   <section id="section-usb" class="section" aria-label="USB Shield">
+
     <div class="section-header">
-      <div>
-        <h1 class="section-title">🔌 USB Shield</h1>
-        <p class="section-subtitle">Detección y protección de dispositivos USB</p>
+      <div class="section-title-wrap">
+        <span class="section-eyebrow">Dispositivos</span>
+        <h1 class="section-title">USB Shield</h1>
+        <p class="section-subtitle">Detección y protección de dispositivos de almacenamiento</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-secondary btn-sm" id="btn-view-usb-logs">📋 Ver Logs</button>
+        <button class="btn btn-ghost btn-sm" id="btn-view-usb-logs">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <path d="M14 2v6h6M16 13H8M16 17H8"/>
+          </svg>
+          Ver Logs
+        </button>
         <button class="btn btn-primary" id="btn-scan-usb">
-          <span class="btn-icon">🔍</span>
-          Escanear USB
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <span>Escanear USB</span>
         </button>
       </div>
     </div>
 
-    <!-- Agent requirement notice -->
+    <!-- Notice: sin agente (se oculta dinámicamente cuando el agente conecta) -->
     <div id="usb-agent-notice" class="notice notice-warning">
-      <div class="notice-icon">⚠️</div>
+      <div class="notice-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
       <div class="notice-body">
-        <strong>Desktop Agent requerido</strong>
-        <p>Las funciones USB completas (listar unidades, proteger, desproteger) requieren el <strong>ShieldPort Desktop Agent</strong> corriendo en tu PC.</p>
-        <p>El navegador (<strong>WebUSB</strong>) solo puede acceder a dispositivos USB de bajo nivel (HID, CDC) con VID/PID específico, pero <em>no</em> puede listar ni acceder a unidades de disco del sistema operativo.</p>
+        <p class="notice-title">Desktop Agent requerido</p>
+        <p class="notice-text">Las funciones USB (listar, proteger y desproteger) requieren el <strong>ShieldPort Desktop Agent</strong> corriendo en tu PC.</p>
         <div class="notice-actions">
-          <button class="btn btn-sm btn-primary" onclick="ShieldPort.agent.openSetupGuide()">📖 Ver instrucciones de instalación</button>
-          <button class="btn btn-sm btn-ghost" id="btn-retry-agent">🔄 Reintentar conexión</button>
+          <button class="btn btn-sm btn-secondary" onclick="ShieldPort.agent.openSetupGuide()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/>
+            </svg>
+            Instrucciones
+          </button>
+          <button class="btn btn-sm btn-ghost" id="btn-retry-agent">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
+            </svg>
+            Reintentar
+          </button>
         </div>
       </div>
     </div>
 
-
-
-    <!-- USB Devices List (from Desktop Agent) -->
+    <!-- USB Devices List -->
     <div class="card mt-4">
       <div class="card-header">
-        <h2 class="card-title">💾 Unidades USB del Sistema</h2>
-        <span class="badge badge-purple">Requiere Desktop Agent</span>
+        <h2 class="card-title">
+          <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+          </svg>
+          Unidades USB del Sistema
+        </h2>
+        <span class="badge badge-purple">Desktop Agent</span>
       </div>
       <div id="usb-devices-list">
         <div class="empty-state">
-          <div class="empty-icon">🔌</div>
-          <p>Sin dispositivos detectados</p>
-          <small>Presiona "Escanear USB" para actualizar</small>
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+              <path d="M12 2v12M9 6l3-4 3 4"/>
+              <path d="M7 14a5 5 0 0010 0"/>
+            </svg>
+          </div>
+          <p class="empty-title">Sin dispositivos detectados</p>
+          <p class="empty-subtitle">Conecta un USB y presiona "Escanear USB"</p>
         </div>
       </div>
     </div>
 
-    <!-- USB Logs Panel -->
+    <!-- Log Panel (hidden by default) -->
     <div class="card mt-4" id="usb-logs-panel" style="display:none;">
       <div class="card-header">
-        <h2 class="card-title">📋 Log de Actividad USB</h2>
-        <button class="btn btn-ghost btn-sm" id="btn-close-usb-logs">✕ Cerrar</button>
+        <h2 class="card-title">
+          <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
+          </svg>
+          Log de Actividad USB
+        </h2>
+        <button class="btn btn-ghost btn-sm" id="btn-close-usb-logs">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+          Cerrar
+        </button>
       </div>
       <div id="usb-log-entries" class="log-container"></div>
     </div>
 
-    <!-- OS Requirements Info -->
-    <div class="card mt-4 info-card">
+    <!-- OS Requirements -->
+    <div class="card mt-4">
       <div class="card-header">
-        <h2 class="card-title">ℹ️ Requisitos por Sistema Operativo</h2>
+        <h2 class="card-title">
+          <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4M12 8h.01"/>
+          </svg>
+          Requisitos por Sistema Operativo
+        </h2>
       </div>
       <div class="os-requirements">
         <div class="os-block">
-          <div class="os-icon">🪟</div>
-          <div class="os-info">
+          <div class="os-block-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M3 5h18M3 12h18M3 19h18"/>
+            </svg>
+          </div>
+          <div class="os-block-info">
             <strong>Windows</strong>
             <ul>
               <li>Requiere Desktop Agent con <strong>privilegios de Administrador</strong></li>
-              <li>Protección vía <code>diskpart</code> (write protect bit en GPT/MBR)</li>
-              <li>O vía registro: <code>HKLM\SYSTEM\CurrentControlSet\Control\StorageDevicePolicies</code></li>
-              <li>Comando: <code>diskpart → select disk X → attributes disk set readonly</code></li>
+              <li>Protección vía <code>diskpart</code> (write protect bit)</li>
+              <li>O vía registro: <code>StorageDevicePolicies</code></li>
             </ul>
           </div>
         </div>
         <div class="os-block">
-          <div class="os-icon">🐧</div>
-          <div class="os-info">
+          <div class="os-block-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M12 2a10 10 0 100 20 10 10 0 000-20z"/>
+              <path d="M2 12h20M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/>
+            </svg>
+          </div>
+          <div class="os-block-info">
             <strong>Linux</strong>
             <ul>
               <li>Requiere permisos <code>sudo</code> o grupo <code>disk</code></li>
-              <li>Comando: <code>sudo blockdev --setro /dev/sdX</code></li>
+              <li>Proteger: <code>sudo blockdev --setro /dev/sdX</code></li>
               <li>Desproteger: <code>sudo blockdev --setrw /dev/sdX</code></li>
             </ul>
           </div>
         </div>
         <div class="os-block">
-          <div class="os-icon">🍎</div>
-          <div class="os-info">
+          <div class="os-block-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+              <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/>
+              <path d="M8 3.5C6.5 5 5 7 5 9.5 5 13 8.5 16 12 16s7-3 7-6.5c0-2.5-1.5-4.5-3-6"/>
+              <path d="M12 2v9"/>
+            </svg>
+          </div>
+          <div class="os-block-info">
             <strong>macOS</strong>
             <ul>
               <li>Requiere permisos de <code>diskutil</code></li>
-              <li>Montaje solo lectura: <code>diskutil mount readOnly /dev/diskX</code></li>
-              <li>SIP (System Integrity Protection) puede bloquear ciertas operaciones</li>
+              <li>Montaje solo lectura: <code>diskutil mount readOnly diskX</code></li>
+              <li>SIP puede bloquear ciertas operaciones</li>
             </ul>
           </div>
         </div>
@@ -358,156 +537,240 @@
     </div>
   </section>
 
-
-
-  <!-- ══════════════════════════════════
-       SECTION: QR FORGE
-  ══════════════════════════════════ -->
+  <!-- ════════════════════════════════
+       QR FORGE
+  ════════════════════════════════ -->
   <section id="section-qr" class="section" aria-label="QR Forge">
+
     <div class="section-header">
-      <div>
-        <h1 class="section-title">🔷 QR Forge</h1>
-        <p class="section-subtitle">Generación de códigos QR premium con diseño futurista</p>
+      <div class="section-title-wrap">
+        <span class="section-eyebrow">Generador</span>
+        <h1 class="section-title">QR Forge</h1>
+        <p class="section-subtitle">Genera códigos QR premium con diseño personalizado</p>
+      </div>
+      <div class="header-actions">
+        <span class="badge badge-green" id="qr-scannable-badge" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <path d="M22 4L12 14.01l-3-3M22 4L12 14.01 7 8.99 2 13"/>
+          </svg>
+          Escaneable
+        </span>
       </div>
     </div>
 
-    <div class="qr-forge-layout">
-      <!-- LEFT: Config Panel -->
-      <div class="qr-config-panel">
-        <!-- Content type -->
-        <div class="card">
+    <div class="grid-2">
+      <!-- Generator column -->
+      <div>
+        <!-- Type selector -->
+        <div class="card" style="padding: 20px;">
           <div class="card-header">
-            <h2 class="card-title">📋 Tipo de Contenido</h2>
+            <h2 class="card-title">
+              <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+              </svg>
+              Contenido
+            </h2>
           </div>
-          <div class="qr-type-grid" id="qr-type-grid">
-            <button class="qr-type-btn active" data-type="url" id="qrtype-url">🌐 URL</button>
-            <button class="qr-type-btn" data-type="text" id="qrtype-text">📝 Texto</button>
-            <button class="qr-type-btn" data-type="phone" id="qrtype-phone">📞 Teléfono</button>
-            <button class="qr-type-btn" data-type="email" id="qrtype-email">📧 Email</button>
-            <button class="qr-type-btn" data-type="contact" id="qrtype-contact">👤 Contacto</button>
-            <button class="qr-type-btn" data-type="wifi" id="qrtype-wifi">📶 WiFi</button>
-            <button class="qr-type-btn" data-type="location" id="qrtype-location">📍 Ubicación</button>
-            <button class="qr-type-btn" data-type="whatsapp" id="qrtype-whatsapp">💬 WhatsApp</button>
-            <button class="qr-type-btn" data-type="custom" id="qrtype-custom">⚙️ Custom</button>
-          </div>
-        </div>
 
-        <!-- Content form -->
-        <div class="card mt-4">
-          <div class="card-header">
-            <h2 class="card-title">✏️ Contenido</h2>
+          <!-- Type buttons -->
+          <div class="qr-type-selector" role="group" aria-label="Tipo de QR">
+            <button class="qr-type-btn active" data-type="url">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+              </svg>
+              URL
+            </button>
+            <button class="qr-type-btn" data-type="text">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M17 6H3M21 12H3M21 18H3"/>
+              </svg>
+              Texto
+            </button>
+            <button class="qr-type-btn" data-type="phone">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.63A2 2 0 012 .84h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 8.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/>
+              </svg>
+              Teléfono
+            </button>
+            <button class="qr-type-btn" data-type="email">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <path d="M22 6l-10 7L2 6"/>
+              </svg>
+              Email
+            </button>
+            <button class="qr-type-btn" data-type="wifi">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0"/>
+                <circle cx="12" cy="20" r="1" fill="currentColor"/>
+              </svg>
+              WiFi
+            </button>
+            <button class="qr-type-btn" data-type="whatsapp">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+              </svg>
+              WhatsApp
+            </button>
           </div>
+
+          <!-- Dynamic form fields -->
           <div id="qr-content-form"></div>
         </div>
 
-        <!-- Design customization -->
+        <!-- Style presets -->
         <div class="card mt-4">
           <div class="card-header">
-            <h2 class="card-title">🎨 Diseño Premium</h2>
+            <h2 class="card-title">
+              <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="10.5" r="2.5"/>
+                <circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="12.5" r="2.5"/>
+                <path d="M12 20v-8"/>
+              </svg>
+              Diseño
+            </h2>
           </div>
-          <div class="design-controls">
-            <div class="form-group">
-              <label class="form-label" for="qr-style-preset">Estilo predefinido</label>
-              <select class="form-select" id="qr-style-preset">
-                <option value="cyber">⚡ Cyber Neon</option>
-                <option value="ocean">🌊 Ocean Blue</option>
-                <option value="matrix">💚 Matrix Green</option>
-                <option value="fire">🔥 Fire Alert</option>
-                <option value="purple">💜 Violet Pulse</option>
-                <option value="custom">🎨 Personalizado</option>
-              </select>
-            </div>
 
-            <div id="custom-design-fields" style="display:none;">
-              <div class="color-row">
-                <div class="form-group">
-                  <label class="form-label" for="qr-color-dark">Color oscuro (módulos)</label>
-                  <input type="color" class="form-color" id="qr-color-dark" value="#2af0ff" />
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="qr-color-light">Color claro (fondo)</label>
-                  <input type="color" class="form-color" id="qr-color-light" value="#0a0b0f" />
+          <div class="form-group" style="margin-bottom:16px;">
+            <label class="form-label" for="qr-style-preset">Preset de colores</label>
+            <select class="form-select" id="qr-style-preset">
+              <option value="cyber">⚡ Cyber (Cyan/Negro)</option>
+              <option value="ocean">🌊 Ocean (Azul/Oscuro)</option>
+              <option value="matrix">💚 Matrix (Verde/Negro)</option>
+              <option value="fire">🔥 Fire (Rojo/Negro)</option>
+              <option value="purple">💜 Purple (Violeta/Negro)</option>
+              <option value="custom">⚙️ Personalizado</option>
+            </select>
+          </div>
+
+          <div id="custom-design-fields" style="display:none;">
+            <div class="style-control-row">
+              <div class="form-group">
+                <label class="form-label" for="qr-color-dark">Color módulos</label>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <input type="color" id="qr-color-dark" value="#2af0ff" />
+                  <span style="font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;" id="qr-color-dark-hex">#2af0ff</span>
                 </div>
               </div>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="qr-size">Tamaño (px)</label>
-              <div class="range-with-value">
-                <input type="range" class="form-range" id="qr-size" min="128" max="512" step="32" value="256" />
-                <span id="qr-size-val">256px</span>
+              <div class="form-group">
+                <label class="form-label" for="qr-color-light">Color fondo</label>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <input type="color" id="qr-color-light" value="#0a0b0f" />
+                  <span style="font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;" id="qr-color-light-hex">#0a0b0f</span>
+                </div>
               </div>
             </div>
+          </div>
 
+          <div class="style-control-row" style="margin-top:14px;">
             <div class="form-group">
-              <label class="form-label" for="qr-margin">Margen</label>
-              <div class="range-with-value">
-                <input type="range" class="form-range" id="qr-margin" min="0" max="10" step="1" value="4" />
-                <span id="qr-margin-val">4</span>
+              <label class="form-label" for="qr-size">Tamaño</label>
+              <div class="range-row">
+                <input type="range" id="qr-size" min="128" max="512" step="32" value="256" />
+                <span class="range-val" id="qr-size-val">256px</span>
               </div>
             </div>
-
             <div class="form-group">
-              <label class="form-label" for="qr-ecl">Corrección de errores</label>
+              <label class="form-label" for="qr-ecl">Corrección errores</label>
               <select class="form-select" id="qr-ecl">
-                <option value="L">L — 7% (más pequeño)</option>
-                <option value="M" selected>M — 15% (recomendado)</option>
-                <option value="Q">Q — 25% (para logos)</option>
-                <option value="H">H — 30% (máxima)</option>
+                <option value="L">L — Bajo (7%)</option>
+                <option value="M" selected>M — Medio (15%)</option>
+                <option value="Q">Q — Alto (25%)</option>
+                <option value="H">H — Máximo (30%)</option>
               </select>
             </div>
+          </div>
 
-            <div class="form-group">
-              <label class="form-label toggle-label" for="qr-glow-toggle">
-                <span>Efecto glow</span>
-                <label class="toggle-switch">
-                  <input type="checkbox" id="qr-glow-toggle" checked />
-                  <span class="toggle-track"></span>
-                </label>
-              </label>
-            </div>
+          <div class="toggle-row" style="margin-top:14px;">
+            <span class="toggle-label">Efecto glow neon</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="qr-glow-toggle" checked />
+              <span class="toggle-track"></span>
+            </label>
           </div>
         </div>
 
-        <div class="card-actions mt-4">
-          <button class="btn btn-primary btn-lg" id="btn-generate-qr">
-            <span>⚡</span> Generar QR
+        <div style="margin-top:16px;">
+          <button class="btn btn-primary btn-lg" id="btn-generate-qr" style="width:100%;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+            </svg>
+            Generar Código QR
           </button>
         </div>
       </div>
 
-      <!-- RIGHT: Preview + History -->
-      <div class="qr-preview-panel">
-        <!-- Preview -->
-        <div class="card qr-preview-card">
+      <!-- Preview column -->
+      <div>
+        <div class="card" style="min-height: 360px;">
           <div class="card-header">
-            <h2 class="card-title">👁️ Preview</h2>
-            <div id="qr-scannable-badge" class="badge badge-green" style="display:none;">✅ Escaneable</div>
+            <h2 class="card-title">
+              <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              Vista Previa
+            </h2>
           </div>
+
           <div class="qr-preview-area" id="qr-preview-area">
-            <div class="qr-placeholder">
-              <div class="qr-placeholder-icon">🔷</div>
+            <div class="qr-preview-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="5" y="5" width="3" height="3" fill="currentColor" stroke="none"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="16" y="5" width="3" height="3" fill="currentColor" stroke="none"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+                <rect x="5" y="16" width="3" height="3" fill="currentColor" stroke="none"/>
+              </svg>
               <p>El QR aparecerá aquí</p>
-              <small>Configura el contenido y presiona Generar</small>
             </div>
           </div>
-          <div id="qr-export-actions" class="card-actions" style="display:none;">
-            <button class="btn btn-primary btn-sm" id="btn-download-png">⬇️ PNG</button>
-            <button class="btn btn-secondary btn-sm" id="btn-download-svg">⬇️ SVG</button>
-            <button class="btn btn-ghost btn-sm" id="btn-copy-qr">📋 Copiar</button>
+
+          <!-- Export actions -->
+          <div id="qr-export-actions" class="qr-export-actions" style="display:none; margin-top:16px;">
+            <button class="btn btn-primary btn-sm" id="btn-download-png">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+              </svg>
+              PNG
+            </button>
+            <button class="btn btn-secondary btn-sm" id="btn-copy-qr">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+              </svg>
+              Copiar
+            </button>
           </div>
         </div>
 
-        <!-- QR History -->
+        <!-- History -->
         <div class="card mt-4">
           <div class="card-header">
-            <h2 class="card-title">🕐 Historial QR</h2>
-            <button class="btn btn-ghost btn-sm" id="btn-clear-qr-history">🗑️ Limpiar</button>
+            <h2 class="card-title">
+              <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v4l3 3"/>
+              </svg>
+              Historial QR
+            </h2>
+            <button class="btn btn-ghost btn-sm" id="btn-clear-qr-history">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M3 6h18M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6M10 11v6M14 11v6M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+              </svg>
+              Borrar
+            </button>
           </div>
-          <div id="qr-history-list">
+          <div class="qr-history-list" id="qr-history-list">
             <div class="empty-state">
-              <div class="empty-icon">🔷</div>
-              <p>Sin QR generados aún</p>
+              <div class="empty-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 8v4l3 3"/>
+                </svg>
+              </div>
+              <p class="empty-title">Sin historial</p>
+              <p class="empty-subtitle">Los QR generados aparecerán aquí</p>
             </div>
           </div>
         </div>
@@ -517,36 +780,40 @@
 
 </main>
 
-<!-- ═══════════════════════════════════════════════════
-     MODAL: Confirmación crítica
-════════════════════════════════════════════════════ -->
-<div id="confirm-modal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+<!-- Confirm Modal -->
+<div id="confirm-modal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
   <div class="modal-box">
-    <div class="modal-icon" id="confirm-icon">⚠️</div>
-    <h2 class="modal-title" id="confirm-title">Confirmar acción</h2>
-    <p class="modal-message" id="confirm-message"></p>
+    <div class="modal-header">
+      <h2 class="modal-title" id="confirm-title">Confirmar acción</h2>
+      <button class="btn btn-ghost btn-sm" id="confirm-cancel-x">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body" id="confirm-body"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="confirm-cancel">Cancelar</button>
-      <button class="btn btn-danger" id="confirm-ok">Confirmar</button>
+      <button class="btn btn-primary" id="confirm-ok">Confirmar</button>
     </div>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════
-     MODAL: Setup Guide
-════════════════════════════════════════════════════ -->
-<div id="setup-modal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="setup-title">
+<!-- Setup Modal -->
+<div id="setup-modal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
   <div class="modal-box modal-lg">
     <div class="modal-header">
-      <h2 class="modal-title" id="setup-title">📦 Instalación del Desktop Agent</h2>
-      <button class="btn btn-ghost btn-sm" id="setup-modal-close">✕</button>
+      <h2 class="modal-title" id="setup-title">Instalar Desktop Agent</h2>
+      <button class="btn btn-ghost btn-sm" id="setup-modal-close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
     </div>
     <div class="modal-content" id="setup-modal-content"></div>
   </div>
 </div>
 
-<!-- Scripts -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="app.js"></script>
 <script src="usb-ui.js"></script>
 <script src="qr-service.js"></script>
