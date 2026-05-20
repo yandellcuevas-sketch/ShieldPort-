@@ -814,6 +814,35 @@
   </div>
 </div>
 
+<!-- BitLocker Password Modal -->
+<div id="password-modal" class="modal-overlay" style="display:none;" role="dialog" aria-modal="true">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2 class="modal-title" id="password-modal-title">Contraseña BitLocker</h2>
+      <button class="btn btn-ghost btn-sm" id="password-modal-close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p id="password-modal-desc" style="margin-bottom:15px; color:var(--text-secondary); font-size:14px;"></p>
+      <div class="form-group">
+        <label class="form-label" for="password-input">Contraseña</label>
+        <input type="password" class="form-input" id="password-input" placeholder="Escribe tu contraseña" />
+      </div>
+      <div class="form-group" id="password-confirm-group" style="display:none; margin-top:10px;">
+        <label class="form-label" for="password-confirm-input">Confirmar Contraseña</label>
+        <input type="password" class="form-input" id="password-confirm-input" placeholder="Repite tu contraseña" />
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="password-modal-cancel">Cancelar</button>
+      <button class="btn btn-primary" id="password-modal-ok">Aceptar</button>
+    </div>
+  </div>
+</div>
+
 <script src="app.js"></script>
 <script src="usb-ui.js"></script>
 <script src="qr-service.js"></script>
