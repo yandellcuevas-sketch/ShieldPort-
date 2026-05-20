@@ -68,72 +68,80 @@ const usbService = {
     });
   },
 
+  // Resolve drive letter (e.g. "E:") to physical disk number using PowerShell
+  _getDiskNumber(driveLetter) {
+    return new Promise((resolve) => {
+      // driveLetter may come as "E:", "E:\", strip to just the letter
+      const letter = driveLetter.replace(/[:\\/]/g, '').toUpperCase();
+      const ps = `powershell -NoProfile -Command "Get-Partition | Where-Object { $_.DriveLetter -eq '${letter}' } | Get-Disk | Select-Object -ExpandProperty Number"`;
+      exec(ps, (error, stdout) => {
+        if (error || !stdout.trim()) {
+          resolve(null);
+        } else {
+          const num = parseInt(stdout.trim(), 10);
+          resolve(isNaN(num) ? null : num);
+        }
+      });
+    });
+  },
+
   async protectDrive(driveId) {
     this.onLog('info', `Attempting to write-protect drive: ${driveId}`);
-    
+
+    if (platform !== 'win32') {
+      return { success: false, message: `Protection not yet implemented for ${platform}` };
+    }
+
+    const diskNum = await this._getDiskNumber(driveId);
+    if (diskNum === null) {
+      this.onLog('error', `Could not resolve disk number for ${driveId}`);
+      return { success: false, message: `No se pudo encontrar el disco físico para ${driveId}. Asegúrate de ejecutar el agente como Administrador.` };
+    }
+
     return new Promise((resolve) => {
-      if (platform === 'win32') {
-        // Find disk number from device path
-        const diskNumMatch = driveId.match(/PhysicalDrive(\d+)/i);
-        if (!diskNumMatch) {
-          resolve({ success: false, message: "Invalid drive ID for Windows" });
-          return;
+      const scriptPath = path.join(os.tmpdir(), `shieldport_protect_${Date.now()}.txt`);
+      fs.writeFileSync(scriptPath, `select disk ${diskNum}\nattributes disk set readonly\nexit`);
+
+      exec(`diskpart /s "${scriptPath}"`, (error, stdout) => {
+        try { fs.unlinkSync(scriptPath); } catch (e) {}
+        if (error) {
+          this.onLog('error', `Write-protect failed: ${error.message}`);
+          resolve({ success: false, message: error.message });
+        } else {
+          this.onLog('success', `Disk ${diskNum} (${driveId}) write-protected`);
+          resolve({ success: true, message: 'Protección contra escritura activada' });
         }
-        const diskNum = diskNumMatch[1];
-        
-        const scriptPath = path.join(os.tmpdir(), `shieldport_protect_${Date.now()}.txt`);
-        fs.writeFileSync(scriptPath, `select disk ${diskNum}\nattributes disk set readonly\nexit`);
-        
-        exec(`diskpart /s "${scriptPath}"`, (error, stdout, stderr) => {
-          try { fs.unlinkSync(scriptPath); } catch (e) {}
-          
-          if (error) {
-            this.onLog('error', `Write-protect failed: ${error.message}`);
-            resolve({ success: false, message: error.message });
-          } else {
-            this.onLog('success', `Drive ${driveId} is now write-protected`);
-            resolve({ success: true, message: "Write protection enabled via diskpart" });
-          }
-        });
-      } else if (platform === 'linux' || platform === 'darwin') {
-        // For macOS/Linux, mock or use blockdev/diskutil
-        this.onLog('warning', `OS-level protection requires sudo on ${platform}`);
-        resolve({ success: false, message: `Not fully implemented for ${platform} without sudo wrapper` });
-      } else {
-        resolve({ success: false, message: "Unsupported OS" });
-      }
+      });
     });
   },
 
   async unprotectDrive(driveId) {
-    this.onLog('info', `Attempting to remove write-protection from drive: ${driveId}`);
-    
+    this.onLog('info', `Attempting to remove write-protection from: ${driveId}`);
+
+    if (platform !== 'win32') {
+      return { success: false, message: `Protection not yet implemented for ${platform}` };
+    }
+
+    const diskNum = await this._getDiskNumber(driveId);
+    if (diskNum === null) {
+      this.onLog('error', `Could not resolve disk number for ${driveId}`);
+      return { success: false, message: `No se pudo encontrar el disco físico para ${driveId}. Asegúrate de ejecutar el agente como Administrador.` };
+    }
+
     return new Promise((resolve) => {
-      if (platform === 'win32') {
-        const diskNumMatch = driveId.match(/PhysicalDrive(\d+)/i);
-        if (!diskNumMatch) {
-          resolve({ success: false, message: "Invalid drive ID for Windows" });
-          return;
+      const scriptPath = path.join(os.tmpdir(), `shieldport_unprotect_${Date.now()}.txt`);
+      fs.writeFileSync(scriptPath, `select disk ${diskNum}\nattributes disk clear readonly\nexit`);
+
+      exec(`diskpart /s "${scriptPath}"`, (error, stdout) => {
+        try { fs.unlinkSync(scriptPath); } catch (e) {}
+        if (error) {
+          this.onLog('error', `Unprotect failed: ${error.message}`);
+          resolve({ success: false, message: error.message });
+        } else {
+          this.onLog('success', `Disk ${diskNum} (${driveId}) write protection removed`);
+          resolve({ success: true, message: 'Protección contra escritura desactivada' });
         }
-        const diskNum = diskNumMatch[1];
-        
-        const scriptPath = path.join(os.tmpdir(), `shieldport_unprotect_${Date.now()}.txt`);
-        fs.writeFileSync(scriptPath, `select disk ${diskNum}\nattributes disk clear readonly\nexit`);
-        
-        exec(`diskpart /s "${scriptPath}"`, (error, stdout, stderr) => {
-          try { fs.unlinkSync(scriptPath); } catch (e) {}
-          
-          if (error) {
-            this.onLog('error', `Unprotect failed: ${error.message}`);
-            resolve({ success: false, message: error.message });
-          } else {
-            this.onLog('success', `Drive ${driveId} is now unprotected`);
-            resolve({ success: true, message: "Write protection removed via diskpart" });
-          }
-        });
-      } else {
-        resolve({ success: false, message: "Unsupported OS" });
-      }
+      });
     });
   }
 };
