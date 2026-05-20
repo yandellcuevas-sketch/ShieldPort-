@@ -15,7 +15,7 @@ objShell.ShellExecute "node", Chr(34) & strDir & "\main.js" & Chr(34), strDir, "
 
 ' Pequeño aviso sin bloquear
 WScript.Sleep 1200
-Set wsh = CreateObject("WScript.Shell")
-wsh.Popup "ShieldPort Agent iniciado en segundo plano." & Chr(13) & _
-          "Abre http://localhost:3000 en tu navegador.", _
+Set objShellWS = CreateObject("WScript.Shell")
+objShellWS.Popup "ShieldPort Agent iniciado en segundo plano." & Chr(13) & _
+          "Abre http://localhost:8080 en tu navegador.", _
           4, "ShieldPort", 64

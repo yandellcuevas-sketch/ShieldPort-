@@ -184,16 +184,32 @@ const usbService = {
     this.onLog('info', `Configuring BitLocker password for: ${driveId}`);
     return new Promise((resolve) => {
       const letter = driveId.replace(/[:\\/]/g, '').toUpperCase() + ':';
-      // Enable BitLocker securely via PowerShell using -UsedSpaceOnly for speed
-      const ps = `powershell -NoProfile -Command "$sec = ConvertTo-SecureString '${password.replace(/'/g, "''")}' -AsPlainText -Force; Enable-BitLocker -MountPoint '${letter}' -PasswordProtector $sec -UsedSpaceOnly -SkipHardwareTest"`;
+      const scriptPath = path.join(os.tmpdir(), `bl_enable_${Date.now()}.ps1`);
       
-      exec(ps, (error, stdout) => {
-        if (error) {
-          this.onLog('error', `Failed to configure password: ${error.message}`);
-          resolve({ success: false, message: error.message });
+      const psCode = `
+$ErrorActionPreference = "Stop"
+try {
+    $sec = ConvertTo-SecureString '${password.replace(/'/g, "''")}' -AsPlainText -Force
+    Enable-BitLocker -MountPoint '${letter}' -PasswordProtector $sec -UsedSpaceOnly -SkipHardwareTest
+    Write-Output "SUCCESS"
+} catch {
+    Write-Output "ERROR: $($_.Exception.Message)"
+    exit 1
+}
+`;
+      fs.writeFileSync(scriptPath, psCode, 'utf8');
+      
+      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout) => {
+        try { fs.unlinkSync(scriptPath); } catch (e) {}
+        
+        const output = stdout.toString();
+        if (error || output.includes('ERROR:')) {
+          const msg = output.split('ERROR:')[1] || error.message;
+          this.onLog('error', `Failed to configure password: ${msg.trim()}`);
+          resolve({ success: false, message: msg.trim() });
         } else {
-          this.onLog('success', `Password configured for ${driveId}`);
-          resolve({ success: true, message: 'Contraseña configurada. Cifrado en curso o completado.' });
+          this.onLog('success', `Password configured for ${driveId}. Please wait a few minutes for encryption to finish.`);
+          resolve({ success: true, message: 'Contraseña configurada. Espera a que termine de cifrar antes de desconectar.' });
         }
       });
     });
@@ -211,7 +227,7 @@ const usbService = {
           resolve({ success: false, message: error.message });
         } else {
           this.onLog('success', `Password removed from ${driveId}`);
-          resolve({ success: true, message: 'Contraseña eliminada correctamente.' });
+          resolve({ success: true, message: 'Contraseña eliminada. El proceso de descifrado está en curso.' });
         }
       });
     });
@@ -221,11 +237,28 @@ const usbService = {
     this.onLog('info', `Attempting to unlock ${driveId}`);
     return new Promise((resolve) => {
       const letter = driveId.replace(/[:\\/]/g, '').toUpperCase() + ':';
-      const ps = `powershell -NoProfile -Command "$sec = ConvertTo-SecureString '${password.replace(/'/g, "''")}' -AsPlainText -Force; Unlock-BitLocker -MountPoint '${letter}' -Password $sec"`;
+      const scriptPath = path.join(os.tmpdir(), `bl_unlock_${Date.now()}.ps1`);
       
-      exec(ps, (error, stdout) => {
-        if (error) {
-          this.onLog('error', `Failed to unlock: ${error.message}`);
+      const psCode = `
+$ErrorActionPreference = "Stop"
+try {
+    $sec = ConvertTo-SecureString '${password.replace(/'/g, "''")}' -AsPlainText -Force
+    Unlock-BitLocker -MountPoint '${letter}' -Password $sec
+    Write-Output "SUCCESS"
+} catch {
+    Write-Output "ERROR: $($_.Exception.Message)"
+    exit 1
+}
+`;
+      fs.writeFileSync(scriptPath, psCode, 'utf8');
+      
+      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout) => {
+        try { fs.unlinkSync(scriptPath); } catch (e) {}
+        
+        const output = stdout.toString();
+        if (error || output.includes('ERROR:')) {
+          const msg = output.split('ERROR:')[1] || error.message;
+          this.onLog('error', `Failed to unlock: ${msg.trim()}`);
           resolve({ success: false, message: 'Contraseña incorrecta o error al desbloquear.' });
         } else {
           this.onLog('success', `${driveId} unlocked successfully`);
