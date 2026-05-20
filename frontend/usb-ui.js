@@ -169,22 +169,20 @@ ShieldPort.usb = {
         </div>` : ''}
 
         <div class="usb-device-actions">
-          ${!isProtected
-            ? `<button class="btn btn-secondary btn-sm" id="btn-protect-${id}">
-                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
-                   <rect x="3" y="11" width="18" height="11" rx="2"/>
-                   <path d="M7 11V7a5 5 0 0110 0v4"/>
-                 </svg>
-                 Proteger
-               </button>`
-            : `<button class="btn btn-ghost btn-sm" id="btn-unprotect-${id}">
-                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
-                   <rect x="3" y="11" width="18" height="11" rx="2"/>
-                   <path d="M7 11V7a5 5 0 019.9-1"/>
-                 </svg>
-                 Desproteger
-               </button>`
-          }
+          <button class="btn btn-secondary btn-sm" id="btn-protect-${id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+            Proteger
+          </button>
+          <button class="btn btn-ghost btn-sm" id="btn-unprotect-${id}">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+              <rect x="3" y="11" width="18" height="11" rx="2"/>
+              <path d="M7 11V7a5 5 0 019.9-1"/>
+            </svg>
+            Desproteger
+          </button>
           <button class="btn btn-ghost btn-sm" onclick="ShieldPort.usb.refreshDrive('${id}')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
               <path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8"/><path d="M3 3v5h5"/>
