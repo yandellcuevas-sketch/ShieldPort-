@@ -208,14 +208,18 @@ ShieldPort.qr = {
     }
 
     try {
-      new QRCode(wrapper, {
-        text: content,
+      this._qrCodeInstance = new QRCodeStyling({
         width: size,
         height: size,
-        colorDark: dark,
-        colorLight: light,
-        correctLevel: QRCode.CorrectLevel[ecl] ?? QRCode.CorrectLevel.M,
+        data: content,
+        margin: 10,
+        qrOptions: { errorCorrectionLevel: ecl },
+        dotsOptions: { color: dark, type: "dots" },
+        cornersSquareOptions: { color: dark, type: "extra-rounded" },
+        cornersDotOptions: { color: dark, type: "dot" },
+        backgroundOptions: { color: light }
       });
+      this._qrCodeInstance.append(wrapper);
 
       // Show export + badge
       const exportEl = document.getElementById('qr-export-actions');
@@ -340,20 +344,13 @@ ShieldPort.qr = {
   },
 
   downloadQR(format) {
-    const canvas = document.querySelector('#qr-canvas-wrapper canvas');
-    if (!canvas) {
+    if (!this._qrCodeInstance) {
       ShieldPort.showToast('warning', 'Sin QR', 'Genera un código QR primero');
       return;
     }
 
     if (format === 'png') {
-      const url = canvas.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `shieldport-qr-${Date.now()}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      this._qrCodeInstance.download({ name: `shieldport-qr-${Date.now()}`, extension: "png" });
       ShieldPort.showToast('success', 'Descarga iniciada', 'Imagen PNG guardada');
     }
   },
