@@ -19,6 +19,23 @@ const ShieldPort = {
     webUsbSupported: false,
   },
 
+  explorer: {
+    open(drive) {
+      const card = document.getElementById('usb-explorer-card');
+      const badge = document.getElementById('explorer-drive-badge');
+      if (card && badge) {
+        card.style.display = 'block';
+        badge.textContent = drive;
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (window.USBExplorer) USBExplorer.mount(drive);
+      }
+    },
+    close() {
+      const card = document.getElementById('usb-explorer-card');
+      if (card) card.style.display = 'none';
+    }
+  },
+
   // ── INIT ─────────────────────────────────────────────────
   init() {
     this.initParticles();
@@ -74,6 +91,8 @@ const ShieldPort = {
     document.getElementById('btn-refresh-dashboard')?.addEventListener('click', () => {
       this.refreshDashboard();
     });
+
+    document.getElementById('btn-close-explorer')?.addEventListener('click', () => this.explorer.close());
   },
 
   // ── DETECT CAPABILITIES ──────────────────────────────────
@@ -106,6 +125,7 @@ const ShieldPort = {
         this.state.agentConnected = true;
         this.state.agentWs = ws;
         this.updateAgentStatus('online', 'Agente Activo');
+        if (window.USBExplorer) USBExplorer.setAgentConnected(true);
         // Hide USB notice
         const notice = document.getElementById('usb-agent-notice');
         if (notice) notice.style.display = 'none';
@@ -125,6 +145,7 @@ const ShieldPort = {
       ws.addEventListener('close', () => {
         this.state.agentConnected = false;
         this.state.agentWs = null;
+        if (window.USBExplorer) USBExplorer.setAgentConnected(false);
         this.updateAgentStatus('offline', 'Sin Agente');
         // Show USB notice again
         const notice = document.getElementById('usb-agent-notice');
@@ -144,6 +165,11 @@ const ShieldPort = {
   },
 
   _handleAgentMessage(msg) {
+    if (msg.type && msg.type.startsWith('fs_')) {
+      if (window.USBExplorer) USBExplorer.handleAgentMessage(msg);
+      return;
+    }
+
     switch (msg.type) {
       case 'DRIVES_LIST':
         this.state.usbDevices = msg.drives || [];
