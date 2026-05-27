@@ -16,6 +16,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/qr-code-styling@1.5.0/lib/qr-code-styling.js"></script>
   <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="explorer.css" />
 </head>
 
 <body>
@@ -470,6 +471,30 @@
         </div>
       </div>
 
+      <!-- USB File Explorer -->
+      <div class="card mt-4" id="usb-explorer-card" style="display:none; padding:0; overflow:hidden;">
+        <div class="card-header" style="padding:16px 20px 0;">
+          <h2 class="card-title">
+            <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+            </svg>
+            Explorador de archivos
+          </h2>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span class="badge badge-yellow" id="explorer-drive-badge">—</span>
+            <button class="btn btn-ghost btn-sm" id="btn-close-explorer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M18 6L6 18M6 6l12 12"/>
+              </svg>
+              Cerrar
+            </button>
+          </div>
+        </div>
+        <div style="padding:16px;">
+          <div id="usb-explorer-root"></div>
+        </div>
+      </div>
+
       <!-- Log Panel (hidden by default) -->
       <div class="card mt-4" id="usb-logs-panel" style="display:none;">
         <div class="card-header">
@@ -877,6 +902,7 @@
   <script src="app.js"></script>
   <script src="usb-ui.js"></script>
   <script src="qr-service.js"></script>
+  <script src="usb-explorer.js"></script>
 </body>
 
 </html>
