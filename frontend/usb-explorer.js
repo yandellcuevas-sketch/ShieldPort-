@@ -107,7 +107,7 @@ function buildShell() {
       <div class="explorer-toolbar">
         <div class="explorer-nav">
           <button class="exp-btn" id="exp-btn-back" title="Atrás" disabled>
-            \${iconChevron('left')}
+            ${iconChevron('left')}
           </button>
           <div class="explorer-breadcrumb" id="explorer-breadcrumb"></div>
         </div>
@@ -116,25 +116,25 @@ function buildShell() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
             <input type="text" class="exp-search" id="exp-search" placeholder="Filtrar archivos…" />
           </div>
-          <button class="exp-btn exp-btn-toggle \${state.viewMode === 'grid' ? 'active' : ''}" id="exp-btn-viewmode" title="Cambiar vista">
-            \${state.viewMode === 'grid' ? iconList() : iconGrid()}
+          <button class="exp-btn exp-btn-toggle ${state.viewMode === 'grid' ? 'active' : ''}" id="exp-btn-viewmode" title="Cambiar vista">
+            ${state.viewMode === 'grid' ? iconList() : iconGrid()}
           </button>
           <button class="exp-btn" id="exp-btn-refresh" title="Actualizar">
-            \${iconRefresh()}
+            ${iconRefresh()}
           </button>
         </div>
       </div>
 
       <!-- Sort bar -->
       <div class="explorer-sortbar">
-        <button class="sort-btn \${state.sortBy==='name'?'active':''}" data-sort="name">
-          Nombre \${state.sortBy==='name' ? (state.sortDir==='asc'?'↑':'↓') : ''}
+        <button class="sort-btn ${state.sortBy==='name'?'active':''}" data-sort="name">
+          Nombre ${state.sortBy==='name' ? (state.sortDir==='asc'?'↑':'↓') : ''}
         </button>
-        <button class="sort-btn \${state.sortBy==='modified'?'active':''}" data-sort="modified">
-          Modificado \${state.sortBy==='modified' ? (state.sortDir==='asc'?'↑':'↓') : ''}
+        <button class="sort-btn ${state.sortBy==='modified'?'active':''}" data-sort="modified">
+          Modificado ${state.sortBy==='modified' ? (state.sortDir==='asc'?'↑':'↓') : ''}
         </button>
-        <button class="sort-btn \${state.sortBy==='size'?'active':''}" data-sort="size">
-          Tamaño \${state.sortBy==='size' ? (state.sortDir==='asc'?'↑':'↓') : ''}
+        <button class="sort-btn ${state.sortBy==='size'?'active':''}" data-sort="size">
+          Tamaño ${state.sortBy==='size' ? (state.sortDir==='asc'?'↑':'↓') : ''}
         </button>
         <span class="explorer-entry-count" id="explorer-entry-count"></span>
       </div>
@@ -142,7 +142,7 @@ function buildShell() {
       <!-- File list -->
       <div class="explorer-filelist" id="explorer-filelist">
         <div class="exp-loading" id="exp-loading" style="display:none;">
-          <span class="spin">\${iconRefresh()}</span>
+          <span class="spin">${iconRefresh()}</span>
           <span>Cargando…</span>
         </div>
         <div id="explorer-entries"></div>
@@ -150,7 +150,7 @@ function buildShell() {
 
       <!-- Status bar -->
       <div class="explorer-statusbar" id="explorer-statusbar">
-        <span id="exp-status-text">\${state.drive} • /</span>
+        <span id="exp-status-text">${state.drive} • /</span>
         <span id="exp-mock-badge" class="exp-mock-badge">DEMO</span>
       </div>
     </div>
@@ -164,10 +164,10 @@ function buildShell() {
         </div>
         <div class="editor-actions">
           <button class="exp-btn" id="editor-btn-save" title="Guardar (Ctrl+S)" disabled>
-            \${iconSave()} <span style="font-size:12px;margin-left:2px;">Guardar</span>
+            ${iconSave()} <span style="font-size:12px;margin-left:2px;">Guardar</span>
           </button>
           <button class="exp-btn" id="editor-btn-close" title="Cerrar">
-            \${iconX()}
+            ${iconX()}
           </button>
         </div>
       </div>
@@ -201,7 +201,7 @@ function renderEntries() {
     return state.sortDir === 'asc' ? cmp : -cmp;
   });
 
-  countEl.textContent = `\${entries.length} elemento\${entries.length !== 1 ? 's' : ''}`;
+  countEl.textContent = `${entries.length} elemento${entries.length !== 1 ? 's' : ''}`;
 
   if (!entries.length) {
     listEl.innerHTML = `<div class="exp-empty"><p>Sin resultados</p></div>`;
@@ -209,7 +209,7 @@ function renderEntries() {
   }
 
   if (state.viewMode === 'grid') {
-    listEl.innerHTML = `<div class="exp-grid">\${entries.map(e => entryGridCard(e)).join('')}</div>`;
+    listEl.innerHTML = `<div class="exp-grid">${entries.map(e => entryGridCard(e)).join('')}</div>`;
   } else {
     listEl.innerHTML = entries.map(e => entryRow(e)).join('');
   }
@@ -228,20 +228,20 @@ function entryRow(entry) {
   const size = entry.type === 'dir' ? '—' : formatSize(entry.size);
   const isSelected = state.selectedFile === fullPath(entry.name);
   return `
-  <div class="exp-entry-row \${isSelected ? 'selected' : ''}" data-entry="\${entry.name}" data-type="\${entry.type}" title="\${entry.name}">
-    <span class="exp-entry-icon" style="color:\${icon.color}">\${icon.svg}</span>
-    <span class="exp-entry-name">\${entry.name}</span>
-    <span class="exp-entry-size">\${size}</span>
-    <span class="exp-entry-date">\${entry.modified || ''}</span>
+  <div class="exp-entry-row ${isSelected ? 'selected' : ''}" data-entry="${entry.name}" data-type="${entry.type}" title="${entry.name}">
+    <span class="exp-entry-icon" style="color:${icon.color}">${icon.svg}</span>
+    <span class="exp-entry-name">${entry.name}</span>
+    <span class="exp-entry-size">${size}</span>
+    <span class="exp-entry-date">${entry.modified || ''}</span>
   </div>`;
 }
 
 function entryGridCard(entry) {
   const icon = FILE_ICONS[entry.type === 'dir' ? 'dir' : (entry.ext || 'default')];
   return `
-  <div class="exp-grid-card" data-entry="\${entry.name}" data-type="\${entry.type}" title="\${entry.name}">
-    <span class="exp-grid-icon" style="color:\${icon.color}">\${icon.svg}</span>
-    <span class="exp-grid-name">\${entry.name}</span>
+  <div class="exp-grid-card" data-entry="${entry.name}" data-type="${entry.type}" title="${entry.name}">
+    <span class="exp-grid-icon" style="color:${icon.color}">${icon.svg}</span>
+    <span class="exp-grid-name">${entry.name}</span>
   </div>`;
 }
 
@@ -255,8 +255,8 @@ function renderBreadcrumb() {
 
   el.innerHTML = crumbs.map((c, i) =>
     i < crumbs.length - 1
-      ? `<button class="bc-part" data-path="\${c.path}">\${c.label}</button><span class="bc-sep">/</span>`
-      : `<span class="bc-current">\${c.label}</span>`
+      ? `<button class="bc-part" data-path="${c.path}">${c.label}</button><span class="bc-sep">/</span>`
+      : `<span class="bc-current">${c.label}</span>`
   ).join('');
 
   el.querySelectorAll('[data-path]').forEach(btn => {
@@ -285,7 +285,7 @@ function loadDirectory(path) {
   if (backBtn) backBtn.disabled = state.pathStack.length <= 1;
 
   if (state.agentConnected) {
-    ShieldPort.agent.send({ type: 'fs_list', drive: state.drive, path });
+    ShieldPort.sendToAgent({ type: 'fs_list', drive: state.drive, path });
   } else {
     setTimeout(() => {
       state.entries = MOCK_FS[path] || [];
@@ -298,7 +298,7 @@ function loadDirectory(path) {
 
 function handleEntryClick(name, type) {
   if (type === 'dir') {
-    const newPath = state.currentPath === '/' ? `/\${name}` : `\${state.currentPath}/\${name}`;
+    const newPath = state.currentPath === '/' ? `/${name}` : `${state.currentPath}/${name}`;
     navigateTo(newPath);
   } else {
     openFile(name);
@@ -311,7 +311,7 @@ function openFile(name) {
 
   if (!EDITABLE_EXTS.includes(ext)) {
     if (window.ShieldPort && ShieldPort.toast) {
-      ShieldPort.toast('info', 'Archivo no editable', `Los archivos .\${ext} no se pueden editar en el explorador.`);
+      ShieldPort.toast('info', 'Archivo no editable', `Los archivos .${ext} no se pueden editar en el explorador.`);
     }
     return;
   }
@@ -334,14 +334,14 @@ function openFile(name) {
   state.editorDirty = false;
 
   if (state.agentConnected) {
-    ShieldPort.agent.send({ type: 'fs_read', path });
+    ShieldPort.sendToAgent({ type: 'fs_read', path });
   } else {
     setTimeout(() => {
-      const content = MOCK_CONTENT[name] || `[Contenido de \${name}]`;
+      const content = MOCK_CONTENT[name] || `[Contenido de ${name}]`;
       state.editorContent = content;
       textarea.value = content;
       textarea.disabled = false;
-      footerEl.textContent = `\${content.split('\\n').length} líneas · \${ext.toUpperCase()}`;
+      footerEl.textContent = `${content.split('\\n').length} líneas · ${ext.toUpperCase()}`;
     }, 120);
   }
 }
@@ -361,7 +361,7 @@ function saveFile() {
   const path     = state.selectedFile;
 
   if (state.agentConnected) {
-    ShieldPort.agent.send({ type: 'fs_write', path, content });
+    ShieldPort.sendToAgent({ type: 'fs_write', path, content });
   } else {
     const name = path.split('/').pop();
     MOCK_CONTENT[name] = content;
@@ -369,7 +369,7 @@ function saveFile() {
     document.getElementById('editor-dirty-dot').style.display = 'none';
     document.getElementById('editor-btn-save').disabled = true;
     if (window.ShieldPort && ShieldPort.toast) {
-      ShieldPort.toast('success', 'Guardado', `\${name} guardado correctamente.`);
+      ShieldPort.toast('success', 'Guardado', `${name} guardado correctamente.`);
     }
   }
 }
@@ -384,21 +384,21 @@ function showContextMenu(ev, name, type) {
   const menu = document.createElement('div');
   menu.className = 'exp-context-menu';
   menu.id = 'exp-context-menu';
-  menu.style.cssText = `left:\${Math.min(ev.clientX, window.innerWidth - 180)}px;top:\${Math.min(ev.clientY, window.innerHeight - 160)}px`;
+  menu.style.cssText = `left:${Math.min(ev.clientX, window.innerWidth - 180)}px;top:${Math.min(ev.clientY, window.innerHeight - 160)}px`;
 
   menu.innerHTML = `
-    \${type === 'dir' ? `<button class="ctx-item" data-action="open">
-      \${iconFolder()} Abrir carpeta
+    ${type === 'dir' ? `<button class="ctx-item" data-action="open">
+      ${iconFolder()} Abrir carpeta
     </button>` : ''}
-    \${canEdit ? `<button class="ctx-item" data-action="edit">
-      \${iconEdit()} Editar
+    ${canEdit ? `<button class="ctx-item" data-action="edit">
+      ${iconEdit()} Editar
     </button>` : ''}
     <button class="ctx-item" data-action="rename">
-      \${iconEdit()} Renombrar
+      ${iconEdit()} Renombrar
     </button>
     <div class="ctx-separator"></div>
     <button class="ctx-item ctx-item-danger" data-action="delete">
-      \${iconTrash()} Eliminar
+      ${iconTrash()} Eliminar
     </button>`;
 
   document.body.appendChild(menu);
@@ -407,7 +407,7 @@ function showContextMenu(ev, name, type) {
     btn.addEventListener('click', () => {
       removeContextMenu();
       const action = btn.dataset.action;
-      if (action === 'open')   navigateTo(state.currentPath === '/' ? `/\${name}` : `\${state.currentPath}/\${name}`);
+      if (action === 'open')   navigateTo(state.currentPath === '/' ? `/${name}` : `${state.currentPath}/${name}`);
       if (action === 'edit')   openFile(name);
       if (action === 'rename') startRename(name, type);
       if (action === 'delete') confirmDelete(name, path);
@@ -424,7 +424,7 @@ function removeContextMenu() {
 
 /* ── RENAME ── */
 function startRename(name, type) {
-  const rows = document.querySelectorAll(`[data-entry="\${name}"]`);
+  const rows = document.querySelectorAll(`[data-entry="${name}"]`);
   if (!rows.length) return;
   const row = rows[0];
   const nameEl = row.querySelector('.exp-entry-name, .exp-grid-name');
@@ -455,7 +455,7 @@ function doRename(oldName, newName, type) {
   const newPath = fullPath(newName);
 
   if (state.agentConnected) {
-    ShieldPort.agent.send({ type: 'fs_rename', oldPath, newPath });
+    ShieldPort.sendToAgent({ type: 'fs_rename', oldPath, newPath });
   } else {
     const dir = MOCK_FS[state.currentPath];
     if (dir) {
@@ -463,7 +463,7 @@ function doRename(oldName, newName, type) {
       if (entry) { entry.name = newName; if (entry.ext) entry.ext = newName.split('.').pop().toLowerCase(); }
     }
     if (window.ShieldPort && ShieldPort.toast) {
-      ShieldPort.toast('success', 'Renombrado', `"\${oldName}" → "\${newName}"`);
+      ShieldPort.toast('success', 'Renombrado', `"${oldName}" → "${newName}"`);
     }
     loadDirectory(state.currentPath);
   }
@@ -471,10 +471,10 @@ function doRename(oldName, newName, type) {
 
 /* ── DELETE ── */
 function confirmDelete(name, path) {
-  if (!confirm(`¿Eliminar "\${name}"? Esta acción no se puede deshacer.`)) return;
+  if (!confirm(`¿Eliminar "${name}"? Esta acción no se puede deshacer.`)) return;
 
   if (state.agentConnected) {
-    ShieldPort.agent.send({ type: 'fs_delete', path });
+    ShieldPort.sendToAgent({ type: 'fs_delete', path });
   } else {
     const dir = MOCK_FS[state.currentPath];
     if (dir) {
@@ -483,7 +483,7 @@ function confirmDelete(name, path) {
     }
     if (state.selectedFile === path) closeEditor();
     if (window.ShieldPort && ShieldPort.toast) {
-      ShieldPort.toast('success', 'Eliminado', `"\${name}" eliminado.`);
+      ShieldPort.toast('success', 'Eliminado', `"${name}" eliminado.`);
     }
     loadDirectory(state.currentPath);
   }
@@ -515,7 +515,7 @@ function handleAgentMessage(msg) {
       textarea.disabled = false;
       const lines = (msg.content || '').split('\\n').length;
       const ext = (state.selectedFile || '').split('.').pop().toUpperCase();
-      if (footerEl) footerEl.textContent = `\${lines} líneas · \${ext}`;
+      if (footerEl) footerEl.textContent = `${lines} líneas · ${ext}`;
     }
   }
   if (msg.type === 'fs_write' && msg.ok) {
@@ -598,7 +598,7 @@ function attachEvents() {
 
 /* ── HELPERS ── */
 function fullPath(name) {
-  return state.currentPath === '/' ? `/\${name}` : `\${state.currentPath}/\${name}`;
+  return state.currentPath === '/' ? `/${name}` : `${state.currentPath}/${name}`;
 }
 
 function setLoading(v) {
@@ -611,15 +611,15 @@ function setLoading(v) {
 
 function updateStatusBar() {
   const el = document.getElementById('exp-status-text');
-  if (el) el.textContent = `\${state.drive} • \${state.currentPath}`;
+  if (el) el.textContent = `${state.drive} • ${state.currentPath}`;
 }
 
 function formatSize(bytes) {
   if (!bytes) return '—';
-  if (bytes < 1024) return `\${bytes} B`;
-  if (bytes < 1048576) return `\${(bytes/1024).toFixed(1)} KB`;
-  if (bytes < 1073741824) return `\${(bytes/1048576).toFixed(1)} MB`;
-  return `\${(bytes/1073741824).toFixed(1)} GB`;
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes/1024).toFixed(1)} KB`;
+  if (bytes < 1073741824) return `${(bytes/1048576).toFixed(1)} MB`;
+  return `${(bytes/1073741824).toFixed(1)} GB`;
 }
 
 /* ── ICONS ── */
@@ -635,7 +635,7 @@ function iconX()      { return \`<svg viewBox="0 0 24 24" fill="none" stroke="cu
 function iconRefresh(){ return \`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" width="15" height="15"><path d="M4 4v5h5M20 20v-5h-5"/><path d="M20 9A9 9 0 006 5.5L4 9M4 15a9 9 0 0014 3.5l2-3.5"/></svg>\`; }
 function iconGrid()   { return \`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" width="15" height="15"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>\`; }
 function iconList()   { return \`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" width="15" height="15"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>\`; }
-function iconChevron(dir) { return \`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><path d="\${dir==='left'?'M15 18l-6-6 6-6':'M9 18l6-6-6-6'}"/></svg>\`; }
+function iconChevron(dir) { return \`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="14" height="14"><path d="${dir==='left'?'M15 18l-6-6 6-6':'M9 18l6-6-6-6'}"/></svg>\`; }
 
 /* ── PUBLIC API ── */
 window.USBExplorer = {
