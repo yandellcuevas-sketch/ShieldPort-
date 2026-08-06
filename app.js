@@ -49,7 +49,7 @@ const ShieldPort = {
 
   // ── NAVIGATION ───────────────────────────────────────────
   nav(section) {
-    const validSections = ['dashboard', 'usb', 'qr'];
+    const validSections = ['dashboard', 'usb', 'qr', 'format'];
     if (!validSections.includes(section)) return;
 
     // Hide all sections
@@ -75,12 +75,17 @@ const ShieldPort = {
     }
 
     // Update breadcrumb
-    const sectionNames = { dashboard: 'Dashboard', usb: 'USB Shield', qr: 'QR Forge' };
+    const sectionNames = { dashboard: 'Dashboard', usb: 'USB Shield', qr: 'QR Forge', format: 'USB Format' };
     const breadcrumb = document.getElementById('topbar-section-name');
     if (breadcrumb) breadcrumb.textContent = sectionNames[section] || section;
 
     this.state.currentSection = section;
     this.closeMobileMenu();
+    
+    // Trigger any section-specific initializations
+    if (section === 'format' && window.USBFormatUI) {
+      window.USBFormatUI.onShow();
+    }
   },
 
   initNav() {
@@ -175,6 +180,7 @@ const ShieldPort = {
         this.state.usbDevices = msg.drives || [];
         if (this.usb) this.usb.renderDevices(msg.drives || []);
         this._updateDashboardUSBStatus(msg.drives || []);
+        if (window.USBFormatUI) window.USBFormatUI.updateDrivesList(msg.drives || []);
         break;
 
       case 'DRIVE_PROTECTED':
@@ -195,8 +201,13 @@ const ShieldPort = {
         if (this.usb) this.usb.onBitlockerResult(msg);
         break;
 
+      case 'DRIVE_FORMATTED':
+        if (window.USBFormatUI) window.USBFormatUI.onFormatResult(msg);
+        break;
+
       case 'LOG':
         if (this.usb) this.usb.appendLog(msg.level, msg.message);
+        if (window.USBFormatUI) window.USBFormatUI.appendLog(msg.level, msg.message);
         break;
 
       default:

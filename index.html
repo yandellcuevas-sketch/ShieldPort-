@@ -117,6 +117,16 @@
             <span class="nav-label">QR Forge</span>
           </button>
         </li>
+        <li>
+          <button class="nav-item" id="nav-format" data-section="format">
+            <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12a9 9 0 00-9-9M3 12a9 9 0 009 9" />
+              <path d="M12 17V7M8 11l4-4 4 4M8 13l4 4 4-4" />
+            </svg>
+            <span class="nav-label">USB Format</span>
+          </button>
+        </li>
       </ul>
     </nav>
 
@@ -582,6 +592,132 @@
     </section>
 
     <!-- ════════════════════════════════
+       USB FORMAT
+    ════════════════════════════════ -->
+    <section id="section-format" class="section" aria-label="USB Format">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-eyebrow">Herramientas</span>
+          <h1 class="section-title">USB Format</h1>
+          <p class="section-subtitle">Formateo seguro y forzado de dispositivos de almacenamiento</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-ghost btn-sm" id="btn-view-format-logs">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+              <path d="M14 2v6h6M16 13H8M16 17H8" />
+            </svg>
+            Ver Logs
+          </button>
+        </div>
+      </div>
+
+      <!-- Notice: sin agente (se oculta dinámicamente) -->
+      <div id="format-agent-notice" class="notice notice-warning">
+        <div class="notice-icon-wrap">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+        </div>
+        <div class="notice-body">
+          <p class="notice-title">Desktop Agent requerido</p>
+          <p class="notice-text">El formateador forzado requiere que el <strong>ShieldPort Desktop Agent</strong> esté activo con privilegios de Administrador.</p>
+        </div>
+      </div>
+
+      <div class="grid-2 mt-4">
+        <!-- Configuration Card -->
+        <div class="card" style="padding: 24px;">
+          <div class="card-header" style="margin-bottom: 20px;">
+            <h2 class="card-title">
+              <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 8v4M12 16h.01"/>
+              </svg>
+              Configuración de Formateo
+            </h2>
+          </div>
+
+          <div class="form-group mb-4">
+            <label class="form-label" for="format-device-select">Seleccionar USB</label>
+            <select class="form-select" id="format-device-select" style="width: 100%; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px; outline: none; font-size: 14px;">
+              <option value="">Cargando dispositivos...</option>
+            </select>
+          </div>
+
+          <div class="form-group mb-4">
+            <label class="form-label" for="format-fs-select">Sistema de Archivos</label>
+            <select class="form-select" id="format-fs-select" style="width: 100%; background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px; outline: none; font-size: 14px;">
+              <option value="FAT32">FAT32 (Por defecto / Más compatible)</option>
+              <option value="NTFS">NTFS (Excelente para Windows)</option>
+              <option value="exFAT">exFAT (Ideal para archivos grandes y compatibilidad cruzada)</option>
+            </select>
+          </div>
+
+          <!-- Advanced force option -->
+          <div class="form-group mb-4">
+            <label class="checkbox-container" style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; color: var(--text-secondary); margin-bottom: 0;">
+              <input type="checkbox" id="format-force-checkbox" style="margin-top: 4px; accent-color: var(--accent-danger);" />
+              <div>
+                <strong>Formateo Forzado Avanzado (diskpart clean)</strong>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Wipe total del USB. Elimina todas las particiones corruptas y tablas de partición bloqueadas antes de formatear. Úsalo si el formateo normal da errores o para forzar discos rebeldes.</p>
+              </div>
+            </label>
+          </div>
+
+          <div class="warning-box mb-4" id="format-clean-warning" style="display: none; border-left: 4px solid var(--accent-danger); background: rgba(239, 68, 68, 0.05); padding: 16px; border-radius: 8px;">
+            <p style="color: #f87171; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; margin: 0 0 8px 0;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              </svg>
+              ¡ADVERTENCIA CRÍTICA!
+            </p>
+            <p style="color: var(--text-secondary); font-size: 13px; margin: 0;">Esto eliminará permanentemente la tabla de particiones del disco seleccionado. Asegúrate al 100% de haber seleccionado el USB correcto para no dañar tus discos de sistema.</p>
+          </div>
+
+          <button class="btn btn-danger w-full mt-2" id="btn-format-execute" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="margin-right: 8px; vertical-align: middle;">
+              <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span>Formatear Unidad</span>
+          </button>
+        </div>
+
+        <!-- Details / Progress Card -->
+        <div class="card" style="padding: 24px; display: flex; flex-direction: column;">
+          <div class="card-header" style="margin-bottom: 20px;">
+            <h2 class="card-title">
+              <svg class="card-title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+              </svg>
+              Estado de la Operación
+            </h2>
+          </div>
+
+          <div id="format-status-idle" style="text-align: center; padding: 40px 20px; color: var(--text-muted); flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="margin: 0 auto 16px auto; opacity: 0.5;">
+              <path d="M21 16V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2h14a2 2 0 002-2z" />
+            </svg>
+            <p>Selecciona una unidad USB y presiona "Formatear Unidad" para comenzar.</p>
+          </div>
+
+          <div id="format-status-processing" style="display: none; text-align: center; padding: 40px 20px; flex-grow: 1; flex-direction: column; justify-content: center; align-items: center;">
+            <div class="spinner mb-4" style="border: 3px solid rgba(244, 63, 94, 0.1); border-top: 3px solid var(--accent-danger); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 16px auto;"></div>
+            <h3 style="color: var(--text-primary); font-size: 16px; margin-bottom: 8px;" id="format-process-title">Formateando unidad...</h3>
+            <p style="color: var(--text-muted); font-size: 14px;">No desconectes el USB. Este proceso puede tardar hasta un minuto.</p>
+          </div>
+
+          <!-- Format Terminal Logs -->
+          <div class="terminal-logs" id="format-terminal" style="display: none; flex-grow: 1; min-height: 150px; background: rgba(0, 0, 0, 0.4); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: monospace; font-size: 12px; overflow-y: auto; max-height: 250px; text-align: left;">
+            <div class="log-line text-muted">// Logs del formateador forzado</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════
        QR FORGE
   ════════════════════════════════ -->
     <section id="section-qr" class="section" aria-label="QR Forge">
@@ -901,6 +1037,7 @@
 
   <script src="app.js"></script>
   <script src="usb-ui.js"></script>
+  <script src="format-ui.js"></script>
   <script src="qr-service.js"></script>
   <script src="usb-explorer.js"></script>
 </body>

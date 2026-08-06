@@ -1943,3 +1943,35 @@ input[type="color"] {
     padding-right: 14px;
   }
 }
+
+/* ── USB FORMAT TERMINAL LOGS ── */
+.terminal-logs {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 12px;
+  overflow-y: auto;
+  max-height: 250px;
+  color: var(--text-2);
+}
+.log-line {
+  margin-bottom: 4px;
+  line-height: 1.5;
+}
+.log-line.text-info {
+  color: var(--accent);
+}
+.log-line.text-success {
+  color: var(--green);
+}
+.log-line.text-error {
+  color: var(--red);
+}
+.log-line.text-warning {
+  color: var(--yellow);
+}
+.log-level {
+  font-weight: bold;
+}
