@@ -1509,6 +1509,8 @@ svg {
   transition: all var(--t);
   outline: none;
   appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
 .form-input:focus,
