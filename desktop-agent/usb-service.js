@@ -266,6 +266,65 @@ try {
         }
       });
     });
+  },
+
+  async formatDrive(driveId, fileSystem, forceClean) {
+    this.onLog('info', `Attempting to format drive: ${driveId} with ${fileSystem} (Force: ${forceClean})`);
+
+    if (platform !== 'win32') {
+      return { success: false, message: `Formatting not yet implemented for ${platform}` };
+    }
+
+    const diskNum = await this._getDiskNumber(driveId);
+    if (diskNum === null) {
+      this.onLog('error', `Could not resolve disk number for ${driveId}`);
+      return { success: false, message: `No se pudo encontrar el disco físico para ${driveId}.` };
+    }
+
+    const letter = driveId.replace(/[:\\/]/g, '').toUpperCase(); // E.g. "E"
+
+    return new Promise((resolve) => {
+      const scriptPath = path.join(os.tmpdir(), `shieldport_format_${Date.now()}.txt`);
+      let scriptContent = '';
+
+      if (forceClean) {
+        // Full clean, partition creation, formatting, and letter assignment
+        scriptContent = [
+          `select disk ${diskNum}`,
+          `clean`,
+          `create partition primary`,
+          `select partition 1`,
+          `format fs=${fileSystem} quick override`,
+          `assign letter=${letter}`,
+          `exit`
+        ].join('\n');
+      } else {
+        // Fast format on the existing volume
+        scriptContent = [
+          `select volume=${letter}`,
+          `format fs=${fileSystem} quick override`,
+          `exit`
+        ].join('\n');
+      }
+
+      fs.writeFileSync(scriptPath, scriptContent, 'utf8');
+
+      exec(`diskpart /s "${scriptPath}"`, (error, stdout, stderr) => {
+        try { fs.unlinkSync(scriptPath); } catch (e) {}
+        
+        const outString = stdout.toString() + stderr.toString();
+        if (error) {
+          this.onLog('error', `Formatting failed: ${error.message}. Output: ${outString}`);
+          resolve({ success: false, message: `Fallo al formatear: ${error.message}` });
+        } else if (outString.includes('Virtual Disk Service error') || outString.includes('Error del Servicio de disco virtual')) {
+          this.onLog('error', `Formatting failed with Virtual Disk Service error. Output: ${outString}`);
+          resolve({ success: false, message: `Error del Servicio de disco virtual (posiblemente la unidad es demasiado grande para FAT32 o tiene daños físicos).` });
+        } else {
+          this.onLog('success', `Drive ${driveId} formatted successfully`);
+          resolve({ success: true, message: `Unidad ${driveId} formateada correctamente en ${fileSystem}.` });
+        }
+      });
+    });
   }
 };
 

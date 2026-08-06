@@ -53,6 +53,11 @@ wss.on('connection', (ws) => {
           const unlResult = await usbService.unlockBitlocker(msg.driveId, msg.password);
           ws.send(JSON.stringify({ type: 'BITLOCKER_UNLOCKED', success: unlResult.success, driveId: msg.driveId, message: unlResult.message }));
           break;
+
+        case 'FORMAT_DRIVE':
+          const fResult = await usbService.formatDrive(msg.driveId, msg.fileSystem, msg.forceClean);
+          ws.send(JSON.stringify({ type: 'DRIVE_FORMATTED', success: fResult.success, driveId: msg.driveId, message: fResult.message }));
+          break;
           
         default:
           console.log('Unknown message type:', msg.type);
