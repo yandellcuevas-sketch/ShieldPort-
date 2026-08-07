@@ -54,6 +54,17 @@ wss.on('connection', (ws) => {
           ws.send(JSON.stringify({ type: 'BITLOCKER_UNLOCKED', success: unlResult.success, driveId: msg.driveId, message: unlResult.message }));
           break;
 
+        case 'UNLOCK_THEN_DISABLE':
+          // Unlock first, then immediately remove BitLocker protection
+          const utdUnlock = await usbService.unlockBitlocker(msg.driveId, msg.password);
+          if (!utdUnlock.success) {
+            ws.send(JSON.stringify({ type: 'BITLOCKER_DISABLED', success: false, driveId: msg.driveId, message: 'Contraseña incorrecta. No se pudo eliminar la protección.' }));
+          } else {
+            const utdDisable = await usbService.disableBitlocker(msg.driveId);
+            ws.send(JSON.stringify({ type: 'BITLOCKER_DISABLED', success: utdDisable.success, driveId: msg.driveId, message: utdDisable.message }));
+          }
+          break;
+
         case 'FORMAT_DRIVE':
           const fResult = await usbService.formatDrive(msg.driveId, msg.fileSystem, msg.forceClean);
           ws.send(JSON.stringify({ type: 'DRIVE_FORMATTED', success: fResult.success, driveId: msg.driveId, message: fResult.message }));
