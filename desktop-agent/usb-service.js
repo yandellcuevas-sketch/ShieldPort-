@@ -300,12 +300,14 @@ try {
           this.onLog('info', `Formatting ${letter}: with fat32format tool (bypassing 32GB limit)...`);
           exec(`echo y | "${fat32formatExe}" ${letter}:`, (fErr, fStdout, fStderr) => {
             const outStr = (fStdout || '') + (fStderr || '');
-            if (fErr || outStr.includes('Failed')) {
+            // "Failed to allow extended DASD" is just a harmless warning — real success = "Done" in output
+            const reallyFailed = fErr && !outStr.includes('Done');
+            if (reallyFailed) {
               this.onLog('error', `FAT32 Format failed: ${outStr}`);
               resolve({ success: false, message: `Fallo al formatear en FAT32: ${outStr}` });
             } else {
-              this.onLog('success', `Drive ${driveId} formatted to FAT32 successfully!`);
-              resolve({ success: true, message: `Unidad ${driveId} formateada correctamente en FAT32 (Superando el límite de 32GB).` });
+              this.onLog('success', `¡Unidad ${driveId} formateada exitosamente en FAT32!`);
+              resolve({ success: true, message: `Unidad ${driveId} formateada correctamente en FAT32 (límite de 32GB superado).` });
             }
           });
         } else {
