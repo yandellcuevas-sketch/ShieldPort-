@@ -146,47 +146,14 @@ const usbService = {
   },
 
   // ── BITLOCKER (PASSWORD) ────────────────────────────────
+  // ── BITLOCKER (PASSWORD) ────────────────────────────────
   async getBitlockerStatus(driveId) {
     if (platform !== 'win32') return { status: 'Unsupported', locked: false };
     return new Promise((resolve) => {
       const letter = driveId.replace(/[:\/]/g, '').toUpperCase() + ':';
-      const scriptPath = path.join(os.tmpdir(), `bl_status_${Date.now()}.ps1`);
-      const psCode = `
-try {
-    $v = Get-BitLockerVolume -MountPoint '${letter}' -ErrorAction Stop
-    if ($v) {
-        $obj = @{ VolumeStatus = $v.VolumeStatus.ToString(); ProtectionStatus = $v.ProtectionStatus.ToString() }
-        $obj | ConvertTo-Json -Compress
-    } else {
-        Write-Output '{}'
-    }
-} catch {
-    # Fallback to manage-bde if Get-BitLockerVolume throws (e.g. if locked or COM error)
-    try {
-        $bde = manage-bde -status '${letter}'
-        if ($bde) {
-            $text = $bde -join "\`n"
-            $isLocked = $text -match "Locked|Bloqueado|Bloqueada"
-            $hasKey = $text -match "Protection On|Proteccin activada|Proteccin activada" -or $text -match "Encryption Method|Mtodo de cifrado"
-            if ($isLocked) {
-                Write-Output '{"VolumeStatus":"Locked","ProtectionStatus":"On"}'
-            } elseif ($hasKey) {
-                # If protection is on but not locked
-                Write-Output '{"VolumeStatus":"FullyEncrypted","ProtectionStatus":"On"}'
-            } else {
-                Write-Output '{}'
-            }
-        } else {
-            Write-Output '{}'
-        }
-    } catch {
-        Write-Output '{}'
-    }
-}
-`;
-      fs.writeFileSync(scriptPath, psCode, 'utf8');
-      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout) => {
-        try { fs.unlinkSync(scriptPath); } catch (e) {}
+      const psCommand = `powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; try { $v = Get-BitLockerVolume -MountPoint '${letter}'; if ($v) { @{ VolumeStatus = $v.VolumeStatus.ToString(); ProtectionStatus = $v.ProtectionStatus.ToString() } | ConvertTo-Json -Compress } else { Write-Output '{}' } } catch { try { $bde = manage-bde -status '${letter}'; if ($bde) { $text = $bde -join ' '; if ($text -match 'Locked|Bloqueado|Bloqueada') { Write-Output '{\\\"VolumeStatus\\\":\\\"Locked\\\",\\\"ProtectionStatus\\\":\\\"On\\\"}' } elseif ($text -match 'Protection On|Proteccin activada|Mtodo de cifrado|Encryption Method') { Write-Output '{\\\"VolumeStatus\\\":\\\"FullyEncrypted\\\",\\\"ProtectionStatus\\\":\\\"On\\\"}' } else { Write-Output '{}' } } else { Write-Output '{}' } } catch { Write-Output '{}' } }"`;
+      
+      exec(psCommand, (error, stdout) => {
         try {
           const raw = (stdout || '').trim().split('\n').find(l => l.trim().startsWith('{')) || '{}';
           const res = JSON.parse(raw);
@@ -217,27 +184,13 @@ try {
     this.onLog('info', `Configuring BitLocker password for: ${driveId}`);
     return new Promise((resolve) => {
       const letter = driveId.replace(/[:\\/]/g, '').toUpperCase() + ':';
-      const scriptPath = path.join(os.tmpdir(), `bl_enable_${Date.now()}.ps1`);
+      const escapedPw = password.replace(/'/g, "''").replace(/"/g, '`"');
+      const psCommand = `powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; try { $sec = ConvertTo-SecureString '${escapedPw}' -AsPlainText -Force; Enable-BitLocker -MountPoint '${letter}' -PasswordProtector $sec -UsedSpaceOnly -SkipHardwareTest; Write-Output 'SUCCESS' } catch { Write-Output ('ERROR:' + $_.Exception.Message); exit 1 }"`;
       
-      const psCode = `
-$ErrorActionPreference = "Stop"
-try {
-    $sec = ConvertTo-SecureString '${password.replace(/'/g, "''")}' -AsPlainText -Force
-    Enable-BitLocker -MountPoint '${letter}' -PasswordProtector $sec -UsedSpaceOnly -SkipHardwareTest
-    Write-Output "SUCCESS"
-} catch {
-    Write-Output "ERROR: $($_.Exception.Message)"
-    exit 1
-}
-`;
-      fs.writeFileSync(scriptPath, psCode, 'utf8');
-      
-      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout) => {
-        try { fs.unlinkSync(scriptPath); } catch (e) {}
-        
-        const output = stdout.toString();
+      exec(psCommand, (error, stdout, stderr) => {
+        const output = (stdout || '') + (stderr || '');
         if (error || output.includes('ERROR:')) {
-          const msg = output.split('ERROR:')[1] || error.message;
+          const msg = output.split('ERROR:')[1] || error.message || 'Error al configurar contraseña';
           this.onLog('error', `Failed to configure password: ${msg.trim()}`);
           resolve({ success: false, message: msg.trim() });
         } else {
@@ -252,25 +205,14 @@ try {
     this.onLog('info', `Removing BitLocker password from: ${driveId}`);
     return new Promise((resolve) => {
       const letter = driveId.replace(/[:\/]/g, '').toUpperCase() + ':';
-      const scriptPath = path.join(os.tmpdir(), `bl_disable_${Date.now()}.ps1`);
-      const psCode = `
-$ErrorActionPreference = "Stop"
-try {
-    Disable-BitLocker -MountPoint '${letter}'
-    Write-Output "SUCCESS"
-} catch {
-    Write-Output "ERROR: $($_.Exception.Message)"
-    exit 1
-}
-`;
-      fs.writeFileSync(scriptPath, psCode, 'utf8');
-      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout) => {
-        try { fs.unlinkSync(scriptPath); } catch (e) {}
-        const output = stdout.toString();
+      const psCommand = `powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; try { Disable-BitLocker -MountPoint '${letter}'; Write-Output 'SUCCESS' } catch { Write-Output ('ERROR:' + $_.Exception.Message); exit 1 }"`;
+      
+      exec(psCommand, (error, stdout, stderr) => {
+        const output = (stdout || '') + (stderr || '');
         if (error || output.includes('ERROR:')) {
-          const msg = output.split('ERROR:')[1]?.trim() || error?.message || 'Error desconocido';
-          this.onLog('error', `Failed to remove password: ${msg}`);
-          resolve({ success: false, message: msg });
+          const msg = output.split('ERROR:')[1] || error.message || 'Error al desactivar';
+          this.onLog('error', `Failed to remove password: ${msg.trim()}`);
+          resolve({ success: false, message: msg.trim() });
         } else {
           this.onLog('success', `Password removed from ${driveId}`);
           resolve({ success: true, message: 'Contraseña eliminada. El proceso de descifrado está en curso.' });
@@ -283,27 +225,13 @@ try {
     this.onLog('info', `Attempting to unlock ${driveId}`);
     return new Promise((resolve) => {
       const letter = driveId.replace(/[:\\/]/g, '').toUpperCase() + ':';
-      const scriptPath = path.join(os.tmpdir(), `bl_unlock_${Date.now()}.ps1`);
+      const escapedPw = password.replace(/'/g, "''").replace(/"/g, '`"');
+      const psCommand = `powershell -NoProfile -Command "$ErrorActionPreference = 'Stop'; try { $sec = ConvertTo-SecureString '${escapedPw}' -AsPlainText -Force; Unlock-BitLocker -MountPoint '${letter}' -Password $sec; Write-Output 'SUCCESS' } catch { Write-Output ('ERROR:' + $_.Exception.Message); exit 1 }"`;
       
-      const psCode = `
-$ErrorActionPreference = "Stop"
-try {
-    $sec = ConvertTo-SecureString '${password.replace(/'/g, "''")}' -AsPlainText -Force
-    Unlock-BitLocker -MountPoint '${letter}' -Password $sec
-    Write-Output "SUCCESS"
-} catch {
-    Write-Output "ERROR: $($_.Exception.Message)"
-    exit 1
-}
-`;
-      fs.writeFileSync(scriptPath, psCode, 'utf8');
-      
-      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout) => {
-        try { fs.unlinkSync(scriptPath); } catch (e) {}
-        
-        const output = stdout.toString();
+      exec(psCommand, (error, stdout, stderr) => {
+        const output = (stdout || '') + (stderr || '');
         if (error || output.includes('ERROR:')) {
-          const msg = output.split('ERROR:')[1] || error.message;
+          const msg = output.split('ERROR:')[1] || error.message || 'Contraseña incorrecta';
           this.onLog('error', `Failed to unlock: ${msg.trim()}`);
           resolve({ success: false, message: 'Contraseña incorrecta o error al desbloquear.' });
         } else {
