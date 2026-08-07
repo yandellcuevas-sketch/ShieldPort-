@@ -7,15 +7,16 @@
 Set objFSO   = CreateObject("Scripting.FileSystemObject")
 Set objShell = CreateObject("Shell.Application")
 
-' Obtiene la carpeta donde está este .vbs
 strDir = objFSO.GetParentFolderName(WScript.ScriptFullName)
 
-' Lanza node main.js como Administrador, ventana oculta (0)
+' 1. Cierra procesos previos de node.exe usando permisos elevados (para evitar acceso denegado)
+objShell.ShellExecute "taskkill", "/F /IM node.exe", "", "runas", 0
+
+WScript.Sleep 1000
+
+' 2. Lanza node main.js como Administrador en segundo plano (0 = invisible)
 objShell.ShellExecute "node", Chr(34) & strDir & "\main.js" & Chr(34), strDir, "runas", 0
 
-' Pequeño aviso sin bloquear
 WScript.Sleep 1200
 Set objShellWS = CreateObject("WScript.Shell")
-objShellWS.Popup "ShieldPort Agent iniciado en segundo plano." & Chr(13) & _
-          "Abre http://localhost:8080 en tu navegador.", _
-          4, "ShieldPort", 64
+objShellWS.Popup "ShieldPort Agent iniciado con éxito en segundo plano.", 3, "ShieldPort", 64

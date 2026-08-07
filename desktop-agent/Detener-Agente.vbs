@@ -1,11 +1,13 @@
 ' ══════════════════════════════════════════════════════
 ' ShieldPort Desktop Agent — Detener Agente
 ' Doble clic para matar el proceso node (agente).
+' Ejecutado como Administrador para poder cerrar el agente.
 ' ══════════════════════════════════════════════════════
 
-Set objShell = CreateObject("WScript.Shell")
+Set objShell = CreateObject("Shell.Application")
 
-' Mata cualquier proceso node corriendo el agente
-objShell.Run "taskkill /F /IM node.exe", 0, True
+' Ejecuta taskkill elevado como Administrador
+objShell.ShellExecute "taskkill", "/F /IM node.exe", "", "runas", 0
 
-objShell.Popup "ShieldPort Agent detenido.", 3, "ShieldPort", 64
+Set objShellWS = CreateObject("WScript.Shell")
+objShellWS.Popup "ShieldPort Agent detenido correctamente.", 3, "ShieldPort", 64
