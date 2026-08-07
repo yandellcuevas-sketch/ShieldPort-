@@ -153,7 +153,7 @@ const usbService = {
       const scriptPath = path.join(os.tmpdir(), `bl_status_${Date.now()}.ps1`);
       const psCode = `
 try {
-    $v = Get-BitLockerVolume -MountPoint '${letter}' -ErrorAction SilentlyContinue
+    $v = Get-BitLockerVolume -MountPoint '${letter}' -ErrorAction Stop
     if ($v) {
         $obj = @{ VolumeStatus = $v.VolumeStatus.ToString(); ProtectionStatus = $v.ProtectionStatus.ToString() }
         $obj | ConvertTo-Json -Compress
@@ -161,7 +161,27 @@ try {
         Write-Output '{}'
     }
 } catch {
-    Write-Output '{}'
+    # Fallback to manage-bde if Get-BitLockerVolume throws (e.g. if locked or COM error)
+    try {
+        $bde = manage-bde -status '${letter}'
+        if ($bde) {
+            $text = $bde -join "\`n"
+            $isLocked = $text -match "Locked|Bloqueado|Bloqueada"
+            $hasKey = $text -match "Protection On|Proteccin activada|Proteccin activada" -or $text -match "Encryption Method|Mtodo de cifrado"
+            if ($isLocked) {
+                Write-Output '{"VolumeStatus":"Locked","ProtectionStatus":"On"}'
+            } elseif ($hasKey) {
+                # If protection is on but not locked
+                Write-Output '{"VolumeStatus":"FullyEncrypted","ProtectionStatus":"On"}'
+            } else {
+                Write-Output '{}'
+            }
+        } else {
+            Write-Output '{}'
+        }
+    } catch {
+        Write-Output '{}'
+    }
 }
 `;
       fs.writeFileSync(scriptPath, psCode, 'utf8');

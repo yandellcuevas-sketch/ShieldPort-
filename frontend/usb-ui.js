@@ -208,20 +208,7 @@ ShieldPort.usb = {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
             Contraseña (BitLocker): <span id="bl-status-${id}" style="color:var(--text-1);font-weight:500;">—</span>
           </div>
-          <button class="btn btn-ghost btn-sm" style="color:var(--purple);border-color:rgba(168,85,247,0.3);" onclick="ShieldPort.usb.enableBitlocker('${drive.device}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
-              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
-            </svg>
-            Poner Contraseña
-          </button>
-          <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(240,82,82,0.3);" onclick="ShieldPort.usb.smartRemovePassword('${drive.device}')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
-              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>
-              <line x1="17" y1="7" x2="23" y2="13"/><line x1="23" y1="7" x2="17" y2="13"/>
-            </svg>
-            Eliminar Contraseña
-          </button>
-          <div id="bl-actions-${id}" style="display:none;"></div>
+          <div id="bl-actions-${id}" style="display:flex; gap:8px; flex-wrap:wrap; width:100%;"></div>
         </div>
       </div>`;
   },
@@ -313,17 +300,38 @@ ShieldPort.usb = {
     if (msg.status === 'Unencrypted') {
        statusEl.innerHTML = `<span style="color:var(--text-2)">Sin contraseña</span>`;
        actionsEl.innerHTML = `
-         <button class="btn btn-ghost btn-sm" style="color:var(--purple)" onclick="ShieldPort.usb.enableBitlocker('${msg.driveId}')">
+         <button class="btn btn-ghost btn-sm" style="color:var(--purple);border-color:rgba(168,85,247,0.3);" onclick="ShieldPort.usb.enableBitlocker('${msg.driveId}')">
            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
            </svg>
            Poner Contraseña
          </button>
+         <button class="btn btn-ghost btn-sm" style="color:var(--text-muted);border-color:var(--border);opacity:0.4;cursor:not-allowed;" disabled>
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+             <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>
+             <line x1="17" y1="7" x2="23" y2="13"/><line x1="23" y1="7" x2="17" y2="13"/>
+           </svg>
+           Eliminar Contraseña
+         </button>
        `;
     } else if (msg.status === 'Encrypting' || msg.status === 'Decrypting') {
        const label = msg.status === 'Encrypting' ? 'Cifrando' : 'Descifrando';
        statusEl.innerHTML = `<span style="color:var(--accent)">${label}... <span id="bl-pct-${id}"></span></span>`;
-       actionsEl.innerHTML = `<span style="font-size:12px;color:var(--text-2)">⏳ Proceso en curso. No desconectes el USB.</span>`;
+       actionsEl.innerHTML = `
+         <button class="btn btn-ghost btn-sm" style="color:var(--accent);border-color:rgba(42,240,255,0.3);opacity:0.7;cursor:wait;" disabled>
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13" class="animate-spin">
+             <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 11-.57-8.38l5.67-5.67"/>
+           </svg>
+           ${label}...
+         </button>
+         <button class="btn btn-ghost btn-sm" style="color:var(--text-muted);border-color:var(--border);opacity:0.4;cursor:not-allowed;" disabled>
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+             <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>
+             <line x1="17" y1="7" x2="23" y2="13"/><line x1="23" y1="7" x2="17" y2="13"/>
+           </svg>
+           Eliminar Contraseña
+         </button>
+       `;
 
        // Auto-poll every 4 seconds until finished
        this._blPollers[msg.driveId] = setInterval(() => {
@@ -333,7 +341,6 @@ ShieldPort.usb = {
     } else if (msg.status === 'Encrypted') {
        if (msg.locked) {
          statusEl.innerHTML = `<span class="badge badge-red">🔒 Bloqueado</span>`;
-         actionsEl.style.flexWrap = 'wrap';
          actionsEl.innerHTML = `
            <button class="btn btn-primary btn-sm" onclick="ShieldPort.usb.unlockBitlocker('${msg.driveId}')">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
@@ -344,7 +351,7 @@ ShieldPort.usb = {
            <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(240,82,82,0.3);" onclick="ShieldPort.usb.removePassword('${msg.driveId}')">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>
-               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+               <line x1="17" y1="7" x2="23" y2="13"/><line x1="23" y1="7" x2="17" y2="13"/>
              </svg>
              Eliminar Contraseña
            </button>
@@ -352,15 +359,20 @@ ShieldPort.usb = {
        } else {
          statusEl.innerHTML = `<span style="background:rgba(168,85,247,0.15);color:#c084fc;padding:2px 8px;border-radius:5px;font-size:12px;">🔓 Con Contraseña</span>`;
          actionsEl.innerHTML = `
+           <button class="btn btn-ghost btn-sm" style="color:var(--text-muted);border-color:var(--border);opacity:0.4;cursor:not-allowed;" disabled>
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+               <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+             </svg>
+             Poner Contraseña
+           </button>
            <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(240,82,82,0.3);" onclick="ShieldPort.usb.disableBitlocker('${msg.driveId}')">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>
-               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+               <line x1="17" y1="7" x2="23" y2="13"/><line x1="23" y1="7" x2="17" y2="13"/>
              </svg>
              Eliminar Contraseña
            </button>
          `;
-         ShieldPort.showToast('success', '¡Cifrado completo!', `${msg.driveId} está protegido con contraseña.`);
        }
     }
   },
