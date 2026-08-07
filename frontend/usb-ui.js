@@ -6,6 +6,7 @@
 ShieldPort.usb = {
   _logs: [],
   _scanning: false,
+  _blPollers: {},  // active BitLocker status polling timers
 
   init() {
     this._bindButtons();
@@ -280,11 +281,17 @@ ShieldPort.usb = {
     const statusEl = document.getElementById(`bl-status-${id}`);
     const actionsEl = document.getElementById(`bl-actions-${id}`);
     if (!statusEl || !actionsEl) return;
-    
+
     actionsEl.style.display = 'flex';
-    
+
+    // Stop any existing poller for this drive
+    if (this._blPollers[msg.driveId]) {
+      clearInterval(this._blPollers[msg.driveId]);
+      delete this._blPollers[msg.driveId];
+    }
+
     if (msg.status === 'Unencrypted') {
-       statusEl.innerHTML = `<span style="color:var(--text-muted)">Sin contraseña</span>`;
+       statusEl.innerHTML = `<span style="color:var(--text-2)">Sin contraseña</span>`;
        actionsEl.innerHTML = `
          <button class="btn btn-ghost btn-sm" style="color:var(--purple)" onclick="ShieldPort.usb.enableBitlocker('${msg.driveId}')">
            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
@@ -293,15 +300,19 @@ ShieldPort.usb = {
            Poner Contraseña
          </button>
        `;
-    } else if (msg.status === 'Encrypting') {
-       statusEl.innerHTML = `<span style="color:var(--cyan)">Cifrando...</span>`;
-       actionsEl.innerHTML = `<span style="font-size:12px;color:var(--text-muted)">Proceso en curso. No desconectes.</span>`;
-    } else if (msg.status === 'Decrypting') {
-       statusEl.innerHTML = `<span style="color:var(--cyan)">Descifrando...</span>`;
-       actionsEl.innerHTML = `<span style="font-size:12px;color:var(--text-muted)">Proceso en curso. No desconectes.</span>`;
+    } else if (msg.status === 'Encrypting' || msg.status === 'Decrypting') {
+       const label = msg.status === 'Encrypting' ? 'Cifrando' : 'Descifrando';
+       statusEl.innerHTML = `<span style="color:var(--accent)">${label}... <span id="bl-pct-${id}"></span></span>`;
+       actionsEl.innerHTML = `<span style="font-size:12px;color:var(--text-2)">⏳ Proceso en curso. No desconectes el USB.</span>`;
+
+       // Auto-poll every 4 seconds until finished
+       this._blPollers[msg.driveId] = setInterval(() => {
+         ShieldPort.sendToAgent({ type: 'GET_BITLOCKER_STATUS', driveId: msg.driveId });
+       }, 4000);
+
     } else if (msg.status === 'Encrypted') {
        if (msg.locked) {
-         statusEl.innerHTML = `<span class="badge badge-red">Bloqueado</span>`;
+         statusEl.innerHTML = `<span class="badge badge-red">🔒 Bloqueado</span>`;
          actionsEl.innerHTML = `
            <button class="btn btn-primary btn-sm" onclick="ShieldPort.usb.unlockBitlocker('${msg.driveId}')">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
@@ -311,7 +322,7 @@ ShieldPort.usb = {
            </button>
          `;
        } else {
-         statusEl.innerHTML = `<span class="badge badge-purple" style="background:rgba(168,85,247,0.15);color:#c084fc;">Desbloqueado</span>`;
+         statusEl.innerHTML = `<span style="background:rgba(168,85,247,0.15);color:#c084fc;padding:2px 8px;border-radius:5px;font-size:12px;">🔓 Con Contraseña</span>`;
          actionsEl.innerHTML = `
            <button class="btn btn-ghost btn-sm" onclick="ShieldPort.usb.disableBitlocker('${msg.driveId}')">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
@@ -320,6 +331,7 @@ ShieldPort.usb = {
              Quitar Contraseña
            </button>
          `;
+         ShieldPort.showToast('success', '¡Cifrado completo!', `${msg.driveId} está protegido con contraseña.`);
        }
     }
   },
