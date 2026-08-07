@@ -281,60 +281,58 @@ try {
       return { success: false, message: `No se pudo encontrar el disco físico para ${driveId}.` };
     }
 
-    const letter = driveId.replace(/[:\\/]/g, '').toUpperCase(); // E.g. "E"
+    const letter = driveId.replace(/[:\\/]/g, '').toUpperCase(); // E.g. "D"
+    const fsUpper = fileSystem.toUpperCase();
+    const fat32formatExe = path.join(__dirname, 'tools', 'fat32format.exe');
 
     return new Promise((resolve) => {
-      const scriptPath = path.join(os.tmpdir(), `shieldport_format_${Date.now()}.txt`);
-      let scriptContent = '';
+      // Step 1: If forceClean is requested, clean and partition first
+      const cleanScriptPath = path.join(os.tmpdir(), `shieldport_clean_${Date.now()}.txt`);
+      const doClean = forceClean ? `select disk ${diskNum}\nclean\ncreate partition primary\nselect partition 1\nassign letter=${letter}\nexit` : `select volume=${letter}\nassign letter=${letter}\nexit`;
 
-      if (forceClean) {
-        // Full clean, partition creation, formatting, and letter assignment
-        scriptContent = [
-          `select disk ${diskNum}`,
-          `clean`,
-          `create partition primary`,
-          `select partition 1`,
-          `format fs=${fileSystem} quick override`,
-          `assign letter=${letter}`,
-          `exit`
-        ].join('\n');
-      } else {
-        // Fast format on the existing volume
-        scriptContent = [
-          `select volume=${letter}`,
-          `format fs=${fileSystem} quick override`,
-          `exit`
-        ].join('\n');
-      }
+      fs.writeFileSync(cleanScriptPath, doClean, 'utf8');
 
-      fs.writeFileSync(scriptPath, scriptContent, 'utf8');
+      exec(`diskpart /s "${cleanScriptPath}"`, (cleanErr, cleanStdout) => {
+        try { fs.unlinkSync(cleanScriptPath); } catch (e) {}
 
-      exec(`diskpart /s "${scriptPath}"`, (error, stdout, stderr) => {
-        try { fs.unlinkSync(scriptPath); } catch (e) {}
-        
-        const outString = stdout.toString() + stderr.toString();
-        const isSizeError = outString.includes('demasiado grande') || outString.includes('too large');
-
-        // If it failed, try to at least re-assign the drive letter so Windows mounts it
-        if (error || isSizeError || outString.includes('Virtual Disk Service error') || outString.includes('Error del Servicio de disco virtual')) {
-          const assignScript = path.join(os.tmpdir(), `shieldport_assign_${Date.now()}.txt`);
-          fs.writeFileSync(assignScript, `select disk ${diskNum}\nselect partition 1\nassign letter=${letter}\nexit`, 'utf8');
-          exec(`diskpart /s "${assignScript}"`, () => {
-            try { fs.unlinkSync(assignScript); } catch (e) {}
+        if (fsUpper === 'FAT32' && fs.existsSync(fat32formatExe)) {
+          // Use Rufus-style fat32format utility to bypass Windows 32GB limit
+          this.onLog('info', `Formatting ${letter}: with fat32format tool (bypassing 32GB limit)...`);
+          exec(`echo y | "${fat32formatExe}" ${letter}:`, (fErr, fStdout, fStderr) => {
+            const outStr = (fStdout || '') + (fStderr || '');
+            if (fErr || outStr.includes('Failed')) {
+              this.onLog('error', `FAT32 Format failed: ${outStr}`);
+              resolve({ success: false, message: `Fallo al formatear en FAT32: ${outStr}` });
+            } else {
+              this.onLog('success', `Drive ${driveId} formatted to FAT32 successfully!`);
+              resolve({ success: true, message: `Unidad ${driveId} formateada correctamente en FAT32 (Superando el límite de 32GB).` });
+            }
           });
-
-          let errorMsg = `Fallo al formatear.`;
-          if (isSizeError) {
-            errorMsg = `Tu USB es de más de 32GB y Windows no permite formatear en FAT32 unidades tan grandes. Por favor selecciona exFAT o NTFS.`;
-          } else if (error) {
-            errorMsg = `Fallo al formatear: ${error.message}`;
-          }
-
-          this.onLog('error', errorMsg);
-          resolve({ success: false, message: errorMsg });
         } else {
-          this.onLog('success', `Drive ${driveId} formatted successfully`);
-          resolve({ success: true, message: `Unidad ${driveId} formateada correctamente en ${fileSystem}.` });
+          // Standard diskpart format for NTFS/exFAT
+          const formatScriptPath = path.join(os.tmpdir(), `shieldport_format_${Date.now()}.txt`);
+          const formatCmd = [
+            `select disk ${diskNum}`,
+            `select partition 1`,
+            `format fs=${fileSystem} quick override`,
+            `assign letter=${letter}`,
+            `exit`
+          ].join('\n');
+
+          fs.writeFileSync(formatScriptPath, formatCmd, 'utf8');
+
+          exec(`diskpart /s "${formatScriptPath}"`, (error, stdout, stderr) => {
+            try { fs.unlinkSync(formatScriptPath); } catch (e) {}
+            const outString = stdout.toString() + stderr.toString();
+
+            if (error || outString.includes('Virtual Disk Service error')) {
+              this.onLog('error', `Formatting failed: ${outString}`);
+              resolve({ success: false, message: `Fallo al formatear en ${fileSystem}.` });
+            } else {
+              this.onLog('success', `Drive ${driveId} formatted successfully`);
+              resolve({ success: true, message: `Unidad ${driveId} formateada correctamente en ${fileSystem}.` });
+            }
+          });
         }
       });
     });
