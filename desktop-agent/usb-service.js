@@ -313,12 +313,25 @@ try {
         try { fs.unlinkSync(scriptPath); } catch (e) {}
         
         const outString = stdout.toString() + stderr.toString();
-        if (error) {
-          this.onLog('error', `Formatting failed: ${error.message}. Output: ${outString}`);
-          resolve({ success: false, message: `Fallo al formatear: ${error.message}` });
-        } else if (outString.includes('Virtual Disk Service error') || outString.includes('Error del Servicio de disco virtual')) {
-          this.onLog('error', `Formatting failed with Virtual Disk Service error. Output: ${outString}`);
-          resolve({ success: false, message: `Error del Servicio de disco virtual (posiblemente la unidad es demasiado grande para FAT32 o tiene daños físicos).` });
+        const isSizeError = outString.includes('demasiado grande') || outString.includes('too large');
+
+        // If it failed, try to at least re-assign the drive letter so Windows mounts it
+        if (error || isSizeError || outString.includes('Virtual Disk Service error') || outString.includes('Error del Servicio de disco virtual')) {
+          const assignScript = path.join(os.tmpdir(), `shieldport_assign_${Date.now()}.txt`);
+          fs.writeFileSync(assignScript, `select disk ${diskNum}\nselect partition 1\nassign letter=${letter}\nexit`, 'utf8');
+          exec(`diskpart /s "${assignScript}"`, () => {
+            try { fs.unlinkSync(assignScript); } catch (e) {}
+          });
+
+          let errorMsg = `Fallo al formatear.`;
+          if (isSizeError) {
+            errorMsg = `Tu USB es de más de 32GB y Windows no permite formatear en FAT32 unidades tan grandes. Por favor selecciona exFAT o NTFS.`;
+          } else if (error) {
+            errorMsg = `Fallo al formatear: ${error.message}`;
+          }
+
+          this.onLog('error', errorMsg);
+          resolve({ success: false, message: errorMsg });
         } else {
           this.onLog('success', `Drive ${driveId} formatted successfully`);
           resolve({ success: true, message: `Unidad ${driveId} formateada correctamente en ${fileSystem}.` });
