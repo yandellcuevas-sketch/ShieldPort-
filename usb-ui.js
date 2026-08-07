@@ -203,8 +203,25 @@ ShieldPort.usb = {
           </button>
         </div>
 
-        <div class="usb-device-actions" id="bl-actions-${id}" style="margin-top:8px; border-top:1px solid var(--border); padding-top:12px; display:none;">
-          <!-- dynamically populated by BitLocker status -->
+        <div class="usb-device-actions usb-password-actions" style="margin-top:8px; border-top:1px solid var(--line); padding-top:10px; gap:8px; flex-wrap:wrap;">
+          <div style="font-size:11px;color:var(--text-2);display:flex;align-items:center;gap:5px;width:100%;margin-bottom:2px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+            Contraseña (BitLocker): <span id="bl-status-${id}" style="color:var(--text-1);font-weight:500;">—</span>
+          </div>
+          <button class="btn btn-ghost btn-sm" style="color:var(--purple);border-color:rgba(168,85,247,0.3);" onclick="ShieldPort.usb.enableBitlocker('${drive.device}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+            </svg>
+            Poner Contraseña
+          </button>
+          <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(240,82,82,0.3);" onclick="ShieldPort.usb.smartRemovePassword('${drive.device}')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>
+              <line x1="17" y1="7" x2="23" y2="13"/><line x1="23" y1="7" x2="17" y2="13"/>
+            </svg>
+            Eliminar Contraseña
+          </button>
+          <div id="bl-actions-${id}" style="display:none;"></div>
         </div>
       </div>`;
   },
@@ -283,6 +300,9 @@ ShieldPort.usb = {
     if (!statusEl || !actionsEl) return;
 
     actionsEl.style.display = 'flex';
+
+    // Store current status for smartRemovePassword
+    if (statusEl) statusEl.dataset.blStatus = msg.locked ? 'Locked' : msg.status;
 
     // Stop any existing poller for this drive
     if (this._blPollers[msg.driveId]) {
@@ -396,6 +416,27 @@ ShieldPort.usb = {
 
     ShieldPort.showToast('info', 'Desbloqueando...', 'Verificando contraseña.');
     ShieldPort.sendToAgent({ type: 'UNLOCK_THEN_DISABLE', driveId, password: pw });
+  },
+
+  // Detecta estado actual y elimina contraseña inteligentemente
+  async smartRemovePassword(driveId) {
+    const id = driveId.replace(/[^a-zA-Z0-9]/g, '_');
+    const statusEl = document.getElementById(`bl-status-${id}`);
+    const currentStatus = statusEl?.dataset?.blStatus || '';
+
+    if (currentStatus === 'Unencrypted' || currentStatus === '') {
+      ShieldPort.showToast('info', 'Sin contraseña', 'Este USB no tiene contraseña BitLocker activa.');
+      return;
+    }
+    if (currentStatus === 'Encrypting' || currentStatus === 'Decrypting') {
+      ShieldPort.showToast('warning', 'Proceso en curso', 'Espera a que termine el proceso actual antes de eliminar.');
+      return;
+    }
+    if (currentStatus === 'Locked') {
+      await this.removePassword(driveId);
+    } else {
+      await this.disableBitlocker(driveId);
+    }
   },
 
   onBitlockerResult(msg) {
