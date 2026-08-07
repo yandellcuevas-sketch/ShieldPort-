@@ -657,28 +657,30 @@
           </div>
 
           <!-- Advanced force option -->
-          <div class="form-group mb-4">
-            <label class="checkbox-container" style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; color: var(--text-secondary); margin-bottom: 0;">
-              <input type="checkbox" id="format-force-checkbox" style="margin-top: 4px; accent-color: var(--accent-danger);" />
-              <div>
-                <strong>Formateo Forzado Avanzado (diskpart clean)</strong>
-                <p style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">Wipe total del USB. Elimina todas las particiones corruptas y tablas de partición bloqueadas antes de formatear. Úsalo si el formateo normal da errores o para forzar discos rebeldes.</p>
+          <div class="form-group">
+            <label class="format-checkbox-label" for="format-force-checkbox">
+              <input type="checkbox" id="format-force-checkbox" class="format-checkbox" />
+              <span class="format-checkbox-custom"></span>
+              <div class="format-checkbox-content">
+                <span class="format-checkbox-title">Formateo Forzado Avanzado (diskpart clean)</span>
+                <span class="format-checkbox-desc">Wipe total del USB. Elimina todas las particiones corruptas y tablas de partición bloqueadas antes de formatear. Úsalo si el formateo normal da errores o para forzar discos rebeldes.</span>
               </div>
             </label>
           </div>
 
-          <div class="warning-box mb-4" id="format-clean-warning" style="display: none; border-left: 4px solid var(--accent-danger); background: rgba(239, 68, 68, 0.05); padding: 16px; border-radius: 8px;">
-            <p style="color: #f87171; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; margin: 0 0 8px 0;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <div class="format-warning-box" id="format-clean-warning" style="display: none;">
+            <p class="format-warning-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
                 <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
               </svg>
               ¡ADVERTENCIA CRÍTICA!
             </p>
-            <p style="color: var(--text-secondary); font-size: 13px; margin: 0;">Esto eliminará permanentemente la tabla de particiones del disco seleccionado. Asegúrate al 100% de haber seleccionado el USB correcto para no dañar tus discos de sistema.</p>
+            <p class="format-warning-text">Esto eliminará permanentemente la tabla de particiones del disco seleccionado. Asegúrate al 100% de haber seleccionado el USB correcto para no dañar tus discos de sistema.</p>
           </div>
 
-          <button class="btn btn-danger w-full mt-2" id="btn-format-execute" disabled>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="margin-right: 8px; vertical-align: middle;">
+          <button class="format-execute-btn" id="btn-format-execute" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
               <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
             <span>Formatear Unidad</span>
