@@ -313,6 +313,7 @@ ShieldPort.usb = {
     } else if (msg.status === 'Encrypted') {
        if (msg.locked) {
          statusEl.innerHTML = `<span class="badge badge-red">🔒 Bloqueado</span>`;
+         actionsEl.style.flexWrap = 'wrap';
          actionsEl.innerHTML = `
            <button class="btn btn-primary btn-sm" onclick="ShieldPort.usb.unlockBitlocker('${msg.driveId}')">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
@@ -320,15 +321,23 @@ ShieldPort.usb = {
              </svg>
              Desbloquear
            </button>
+           <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(240,82,82,0.3);" onclick="ShieldPort.usb.removePassword('${msg.driveId}')">
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
+               <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>
+               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+             </svg>
+             Eliminar Contraseña
+           </button>
          `;
        } else {
          statusEl.innerHTML = `<span style="background:rgba(168,85,247,0.15);color:#c084fc;padding:2px 8px;border-radius:5px;font-size:12px;">🔓 Con Contraseña</span>`;
          actionsEl.innerHTML = `
-           <button class="btn btn-ghost btn-sm" onclick="ShieldPort.usb.disableBitlocker('${msg.driveId}')">
+           <button class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(240,82,82,0.3);" onclick="ShieldPort.usb.disableBitlocker('${msg.driveId}')">
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="13" height="13">
                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 019.9-1"/>
+               <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
              </svg>
-             Quitar Contraseña
+             Eliminar Contraseña
            </button>
          `;
          ShieldPort.showToast('success', '¡Cifrado completo!', `${msg.driveId} está protegido con contraseña.`);
@@ -359,10 +368,34 @@ ShieldPort.usb = {
   },
 
   async disableBitlocker(driveId) {
-    const confirmed = await ShieldPort.confirm('Quitar Contraseña', '¿Estás seguro de quitar la contraseña? El USB quedará desprotegido. El descifrado tardará unos minutos.', 'Quitar', 'danger');
+    const confirmed = await ShieldPort.confirm(
+      'Eliminar Contraseña',
+      '¿Estás seguro? El USB quedará sin protección. El descifrado puede tardar unos minutos.',
+      'Sí, Eliminar', 'danger'
+    );
     if (!confirmed) return;
-    ShieldPort.showToast('info', 'Iniciando', 'Quitando contraseña. No desconectes el USB...');
+    ShieldPort.showToast('info', 'Eliminando contraseña...', 'No desconectes el USB.');
     ShieldPort.sendToAgent({ type: 'DISABLE_BITLOCKER', driveId });
+  },
+
+  // Eliminar contraseña desde estado BLOQUEADO (desbloquea primero, luego desactiva)
+  async removePassword(driveId) {
+    const pw = await ShieldPort.promptPassword(
+      'Eliminar Contraseña',
+      'Para eliminar la protección necesitas confirmar tu contraseña actual.',
+      false
+    );
+    if (!pw) return;
+
+    const confirmed = await ShieldPort.confirm(
+      '¿Eliminar la contraseña?',
+      `El USB ${driveId} quedará completamente desprotegido y accesible sin contraseña.`,
+      'Sí, Eliminar', 'danger'
+    );
+    if (!confirmed) return;
+
+    ShieldPort.showToast('info', 'Desbloqueando...', 'Verificando contraseña.');
+    ShieldPort.sendToAgent({ type: 'UNLOCK_THEN_DISABLE', driveId, password: pw });
   },
 
   onBitlockerResult(msg) {
