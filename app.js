@@ -505,6 +505,11 @@ const ShieldPort = {
 
       cancelX.onclick = () => done(null);
       cancelBtn.onclick = () => done(null);
+
+      // Allow pressing Enter to confirm
+      const onEnter = (e) => { if (e.key === 'Enter') newOk.click(); };
+      input.addEventListener('keydown', onEnter);
+      confirmInput.addEventListener('keydown', onEnter);
     });
   },
 
