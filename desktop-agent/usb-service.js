@@ -149,28 +149,41 @@ const usbService = {
   async getBitlockerStatus(driveId) {
     if (platform !== 'win32') return { status: 'Unsupported', locked: false };
     return new Promise((resolve) => {
-      const letter = driveId.replace(/[:\\/]/g, '').toUpperCase() + ':';
-      const ps = `powershell -NoProfile -Command "$v = Get-BitLockerVolume -MountPoint '${letter}' -ErrorAction SilentlyContinue; if ($v) { @{ VolumeStatus = $v.VolumeStatus.ToString(); ProtectionStatus = $v.ProtectionStatus.ToString() } | ConvertTo-Json -Compress } else { '{}' }"`;
-      
-      exec(ps, (error, stdout) => {
+      const letter = driveId.replace(/[:\/]/g, '').toUpperCase() + ':';
+      const scriptPath = path.join(os.tmpdir(), `bl_status_${Date.now()}.ps1`);
+      const psCode = `
+try {
+    $v = Get-BitLockerVolume -MountPoint '${letter}' -ErrorAction SilentlyContinue
+    if ($v) {
+        $obj = @{ VolumeStatus = $v.VolumeStatus.ToString(); ProtectionStatus = $v.ProtectionStatus.ToString() }
+        $obj | ConvertTo-Json -Compress
+    } else {
+        Write-Output '{}'
+    }
+} catch {
+    Write-Output '{}'
+}
+`;
+      fs.writeFileSync(scriptPath, psCode, 'utf8');
+      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout) => {
+        try { fs.unlinkSync(scriptPath); } catch (e) {}
         try {
-          const res = JSON.parse(stdout.trim() || '{}');
-          if (!res.VolumeStatus) {
-             return resolve({ status: 'Unencrypted', locked: false });
-          }
-          
+          const raw = (stdout || '').trim().split('\n').find(l => l.trim().startsWith('{')) || '{}';
+          const res = JSON.parse(raw);
+          if (!res.VolumeStatus) return resolve({ status: 'Unencrypted', locked: false });
+
           let status = 'Unencrypted';
           let locked = false;
 
-          if (res.VolumeStatus === 'FullyEncrypted') status = 'Encrypted';
-          else if (res.VolumeStatus === 'EncryptionInProgress') status = 'Encrypting';
-          else if (res.VolumeStatus === 'DecryptionInProgress') status = 'Decrypting';
-          else if (res.VolumeStatus === 'Locked') {
-            status = 'Encrypted';
-            locked = true;
-          }
+          const vs = res.VolumeStatus || '';
+          if (vs.includes('FullyEncrypted')) status = 'Encrypted';
+          else if (vs.includes('Encrypted')) status = 'Encrypted';
+          else if (vs.includes('EncryptionInProgress')) status = 'Encrypting';
+          else if (vs.includes('DecryptionInProgress')) status = 'Decrypting';
+          else if (vs.includes('Locked')) { status = 'Encrypted'; locked = true; }
 
-          if (res.ProtectionStatus === 'Unknown' && status !== 'Unencrypted') locked = true;
+          const ps = res.ProtectionStatus || '';
+          if ((ps === 'Off' || ps === 'Unknown') && status === 'Encrypted') locked = true;
 
           resolve({ status, locked });
         } catch(e) {
@@ -218,13 +231,26 @@ try {
   async disableBitlocker(driveId) {
     this.onLog('info', `Removing BitLocker password from: ${driveId}`);
     return new Promise((resolve) => {
-      const letter = driveId.replace(/[:\\/]/g, '').toUpperCase() + ':';
-      const ps = `powershell -NoProfile -Command "Disable-BitLocker -MountPoint '${letter}'"`;
-      
-      exec(ps, (error, stdout) => {
-        if (error) {
-          this.onLog('error', `Failed to remove password: ${error.message}`);
-          resolve({ success: false, message: error.message });
+      const letter = driveId.replace(/[:\/]/g, '').toUpperCase() + ':';
+      const scriptPath = path.join(os.tmpdir(), `bl_disable_${Date.now()}.ps1`);
+      const psCode = `
+$ErrorActionPreference = "Stop"
+try {
+    Disable-BitLocker -MountPoint '${letter}'
+    Write-Output "SUCCESS"
+} catch {
+    Write-Output "ERROR: $($_.Exception.Message)"
+    exit 1
+}
+`;
+      fs.writeFileSync(scriptPath, psCode, 'utf8');
+      exec(`powershell -NoProfile -ExecutionPolicy Bypass -File "${scriptPath}"`, (error, stdout) => {
+        try { fs.unlinkSync(scriptPath); } catch (e) {}
+        const output = stdout.toString();
+        if (error || output.includes('ERROR:')) {
+          const msg = output.split('ERROR:')[1]?.trim() || error?.message || 'Error desconocido';
+          this.onLog('error', `Failed to remove password: ${msg}`);
+          resolve({ success: false, message: msg });
         } else {
           this.onLog('success', `Password removed from ${driveId}`);
           resolve({ success: true, message: 'Contraseña eliminada. El proceso de descifrado está en curso.' });
